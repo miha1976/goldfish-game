@@ -1,0 +1,1608 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Goldfish — рыболовное приключение</title>
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<style>
+:root{
+  --sky1:#bfeeff; --sky2:#edfaff; --sea1:#38c8e8; --sea2:#147db5;
+  --deep:#075c91; --panel:rgba(255,255,255,.88); --ink:#12344a;
+  --accent:#ffb703; --accent2:#fb8500;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; font-family:Arial,Helvetica,sans-serif; color:var(--ink);
+  background:linear-gradient(#dff7ff,#bdefff); min-height:100vh;
+}
+.wrap{max-width:1100px;margin:auto;padding:16px}
+h1{margin:0 0 4px;font-size:clamp(28px,5vw,50px);color:#086788;text-shadow:0 2px #fff}
+.subtitle{margin:0 0 14px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.card{background:var(--panel);border:1px solid rgba(0,90,130,.18);border-radius:16px;padding:12px;box-shadow:0 8px 24px rgba(0,80,120,.12)}
+.value{font-size:26px;font-weight:800}
+.game{position:relative;border-radius:24px;overflow:hidden;box-shadow:0 18px 50px rgba(0,80,120,.22);border:3px solid rgba(255,255,255,.8)}
+.sky{height:210px;background:linear-gradient(var(--sky1),var(--sky2));position:relative;overflow:hidden}
+.sun{position:absolute;right:8%;top:25px;font-size:70px;animation:pulse 4s ease-in-out infinite}
+.cloud{position:absolute;font-size:54px;filter:drop-shadow(0 4px 3px rgba(0,0,0,.08));animation:cloud 24s linear infinite}
+.c1{top:35px;left:-120px}.c2{top:100px;left:-220px;animation-delay:9s;font-size:40px}
+.island{position:absolute;right:19%;bottom:-2px;font-size:70px;opacity:.95}
+.boat{position:absolute;left:44%;bottom:-11px;font-size:104px;z-index:6;animation:rock 3s ease-in-out infinite;transform-origin:center bottom}
+.fisher{position:absolute;left:48.8%;bottom:62px;font-size:38px;z-index:7;animation:fisher 2s ease-in-out infinite}
+.sea{height:460px;position:relative;background:linear-gradient(var(--sea1),var(--sea2) 48%,var(--deep));overflow:hidden}
+.surface{position:absolute;top:-7px;left:-5%;width:110%;height:30px;border-radius:50%;border-top:6px solid rgba(255,255,255,.75);animation:wave 3s ease-in-out infinite alternate;z-index:8}
+.ray{position:absolute;top:0;width:110px;height:390px;background:linear-gradient(rgba(255,255,255,.25),transparent);transform:skewX(-18deg);filter:blur(5px);opacity:.55}
+.r1{left:10%}.r2{left:55%;width:150px}.r3{right:5%;width:90px}
+.fish{position:absolute;font-size:44px;z-index:3;filter:drop-shadow(0 5px 4px rgba(0,0,0,.15));will-change:transform}
+.school{position:absolute;z-index:2;display:flex;gap:12px;opacity:.72;filter:drop-shadow(0 4px 4px rgba(0,0,0,.12));will-change:transform}
+.school span{display:inline-block;animation:fin 1.3s ease-in-out infinite alternate}
+.school span:nth-child(2){animation-delay:.25s}.school span:nth-child(3){animation-delay:.5s}.school span:nth-child(4){animation-delay:.75s}
+.s1{top:115px;left:-220px;font-size:30px;animation:schoolR 24s linear infinite 3s}
+.s2{top:285px;right:-240px;font-size:27px;transform:scaleX(-1);animation:schoolL 29s linear infinite 11s}
+.f1{top:62px;left:-80px;font-size:38px;animation:swimR 12s linear infinite,driftY 3.4s ease-in-out infinite}
+.f2{top:168px;right:-90px;font-size:47px;transform:scaleX(-1);animation:swimL 18s linear infinite 2s,driftY 4.2s ease-in-out infinite .8s}
+.f3{top:238px;left:-90px;font-size:40px;animation:swimR 23s linear infinite 5s,driftY 5s ease-in-out infinite 1.2s}
+.f4{top:335px;right:-90px;font-size:34px;transform:scaleX(-1);animation:swimL 14s linear infinite 6s,driftY 3.1s ease-in-out infinite .4s}
+.f5{top:198px;left:-120px;font-size:64px;opacity:.68;animation:swimR 31s linear infinite 10s,driftY 6s ease-in-out infinite}
+
+.art-fish{position:absolute;width:78px;height:42px;z-index:3;filter:drop-shadow(0 7px 5px rgba(0,0,0,.17));will-change:transform}
+.art-fish .body{position:absolute;left:17px;top:6px;width:48px;height:29px;border-radius:55% 45% 48% 52%;background:linear-gradient(145deg,#ffe082,#ff8f3d 58%,#ef5c2f);border:2px solid rgba(91,56,29,.3)}
+.art-fish .tail{position:absolute;left:2px;top:8px;width:26px;height:26px;background:linear-gradient(135deg,#ffca55,#ff7547);clip-path:polygon(100% 50%,0 0,16% 50%,0 100%)}
+.art-fish .fin{position:absolute;left:37px;top:27px;width:19px;height:13px;background:#f26e3f;clip-path:polygon(0 0,100% 35%,20% 100%);transform-origin:left top;animation:tailWiggle .55s ease-in-out infinite alternate}
+.art-fish .eye{position:absolute;right:17px;top:13px;width:6px;height:6px;border-radius:50%;background:#173b4c;box-shadow:0 0 0 2px white}
+.art-fish.blue .body{background:linear-gradient(145deg,#bdf5ff,#34bddd 55%,#147da8)}
+.art-fish.blue .tail,.art-fish.blue .fin{background:#48c7df}
+.art-fish.green .body{background:linear-gradient(145deg,#d5ffb9,#65c978 58%,#27916d)}
+.art-fish.green .tail,.art-fish.green .fin{background:#62c987}
+.art-fish.goldfish .body{background:linear-gradient(145deg,#fff8a8,#ffd331 50%,#f39a16);box-shadow:0 0 18px #ffe75b}
+.art-fish.goldfish .tail,.art-fish.goldfish .fin{background:linear-gradient(#ffe56b,#f6a71b)}
+.af1{top:72px;left:-100px;animation:artSwimR 16s linear infinite 1s,driftY 4.1s ease-in-out infinite}
+.af2{top:260px;right:-110px;transform:scaleX(-1) scale(.84);animation:artSwimL 22s linear infinite 8s,driftY 5s ease-in-out infinite .6s}
+.af3{top:350px;left:-110px;transform:scale(.72);opacity:.78;animation:artSwimRSmall 27s linear infinite 13s,driftY 5.6s ease-in-out infinite 1.3s}
+.legend-fish{position:absolute;right:13%;top:92px;width:70px;height:40px;opacity:0;z-index:4;pointer-events:none}
+.legend-fish.show{animation:goldCruise 5.5s ease-in-out}
+@keyframes tailWiggle{from{transform:rotate(-8deg)}to{transform:rotate(10deg)}}
+@keyframes artSwimR{from{transform:translateX(0)}to{transform:translateX(1380px)}}
+@keyframes artSwimL{from{transform:translateX(0) scaleX(-1) scale(.84)}to{transform:translateX(-1380px) scaleX(-1) scale(.84)}}
+@keyframes artSwimRSmall{from{transform:translateX(0) scale(.72)}to{transform:translateX(1400px) scale(.72)}}
+@keyframes goldCruise{0%{opacity:0;transform:translateX(180px) scale(.65)}15%{opacity:.95}70%{opacity:.95;transform:translateX(-230px) scale(.9)}100%{opacity:0;transform:translateX(-420px) scale(.72)}}
+
+.bubble{position:absolute;bottom:-30px;color:#eaffff;font-size:30px;opacity:.6;animation:bubble 6s linear infinite}
+.b1{left:15%}.b2{left:68%;animation-delay:2s}.b3{left:85%;animation-delay:4s}
+.bottom{position:absolute;bottom:-6px;left:0;width:100%;display:flex;justify-content:space-around;align-items:flex-end;font-size:52px;z-index:4}
+.line{position:absolute;top:0;left:50%;width:3px;height:0;background:#173b4c;z-index:25;transition:height .8s;box-shadow:0 0 2px rgba(255,255,255,.8)}
+.hook{position:absolute;top:0;left:calc(50% - 13px);font-size:30px;opacity:0;z-index:26;transition:top .8s,opacity .2s}
+.line.down{height:210px}.hook.down{top:194px;opacity:1;animation:bob 1s ease-in-out infinite}
+.hook.bite{animation:bite .18s 7}
+.bobber{position:absolute;top:4px;left:calc(50% - 10px);width:20px;height:20px;border-radius:50%;background:linear-gradient(#ff3b30 0 48%,#fff 49% 100%);border:2px solid rgba(0,0,0,.35);z-index:27;opacity:0;transition:top .8s,opacity .2s;box-shadow:0 3px 6px rgba(0,0,0,.25)}
+.bobber.down{top:188px;opacity:1;animation:bob 1s ease-in-out infinite}
+.cast-arc{position:absolute;left:50%;top:-15px;width:180px;height:120px;border-top:3px dashed rgba(255,255,255,.9);border-radius:50%;z-index:24;opacity:0;transform:translateX(-50%) rotate(-12deg);pointer-events:none}
+.cast-arc.play{animation:castArc .9s ease-out}
+@keyframes castArc{0%{opacity:0;transform:translateX(-50%) rotate(-28deg) scale(.5)}30%{opacity:1}100%{opacity:0;transform:translateX(-50%) rotate(8deg) scale(1.15)}}
+.splash{position:absolute;top:0;left:calc(50% - 30px);font-size:55px;z-index:11;opacity:0}
+.splash.show{animation:splash .85s}
+.ripple{position:absolute;top:7px;width:54px;height:16px;border:3px solid rgba(255,255,255,.75);border-radius:50%;z-index:9;opacity:0;pointer-events:none}
+.ripple.play{animation:ripple 1.8s ease-out}
+.jump-fish{position:absolute;top:10px;left:-90px;font-size:40px;z-index:10;opacity:0;pointer-events:none}
+.jump-fish.play{animation:fishJump 1.4s ease-in-out}
+.micro-ripple{position:absolute;top:2px;width:28px;height:9px;border:2px solid rgba(255,255,255,.45);border-radius:50%;z-index:7;opacity:0;animation:microRipple 7s ease-out infinite}
+.mr1{left:18%;animation-delay:1s}.mr2{left:72%;animation-delay:4.3s}.mr3{left:43%;animation-delay:8.1s}
+.result{
+  position:absolute;left:14px;top:14px;transform:none;
+  width:min(310px,calc(100% - 28px));padding:9px 12px;text-align:left;
+  background:rgba(255,255,255,.78);border:1px solid rgba(255,255,255,.92);
+  border-radius:13px;z-index:20;backdrop-filter:blur(6px);
+  box-shadow:0 7px 20px rgba(0,50,80,.14);display:grid;
+  grid-template-columns:auto 1fr;column-gap:9px;align-items:center
+}
+#fishIcon{font-size:34px;min-height:0;grid-row:1 / span 2}.msg{font-size:15px;font-weight:800;line-height:1.2}.reward{margin-top:2px;font-size:12px;opacity:.78}
+.controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;padding:15px;background:#f5fdff}
+button{border:0;border-radius:14px;padding:13px 20px;font-size:17px;font-weight:800;cursor:pointer;box-shadow:0 5px 12px rgba(0,70,100,.14)}
+.primary{background:linear-gradient(var(--accent),var(--accent2));color:#392000}
+.secondary{background:white;color:#14546e;border:1px solid #b9e4f2}
+button:disabled{opacity:.6;cursor:not-allowed}
+.gold{animation:goldPop .85s cubic-bezier(.2,.9,.3,1.4), glow .8s alternate 5}
+.coin{position:absolute;z-index:50;font-size:32px;pointer-events:none;animation:coinFly 1.3s ease-out forwards}
+@keyframes cloud{from{transform:translateX(0)}to{transform:translateX(1400px)}}
+@keyframes pulse{50%{transform:scale(1.08)}}
+@keyframes rock{0%,100%{transform:rotate(-2deg) translateY(0)}50%{transform:rotate(2deg) translateY(5px)}}
+@keyframes fisher{50%{transform:translateY(3px)}}
+@keyframes wave{from{transform:translateX(-20px)}to{transform:translateX(20px) translateY(5px)}}
+@keyframes swimR{from{transform:translateX(0)}to{transform:translateX(1300px)}}
+@keyframes swimL{from{transform:translateX(0) scaleX(-1)}to{transform:translateX(-1300px) scaleX(-1)}}
+@keyframes schoolR{from{transform:translateX(0)}to{transform:translateX(1450px)}}
+@keyframes schoolL{from{transform:translateX(0) scaleX(-1)}to{transform:translateX(-1450px) scaleX(-1)}}
+@keyframes driftY{0%,100%{margin-top:0}50%{margin-top:12px}}
+@keyframes fin{from{transform:rotate(-4deg) translateY(0)}to{transform:rotate(4deg) translateY(4px)}}
+@keyframes bubble{0%{transform:translateY(0) scale(.5);opacity:0}20%{opacity:.6}100%{transform:translateY(-480px) scale(1.2);opacity:0}}
+@keyframes bob{50%{transform:translateY(9px)}}
+@keyframes bite{50%{transform:translateY(20px) rotate(12deg)}}
+@keyframes splash{0%{opacity:0;transform:scale(.3) translateY(8px)}28%{opacity:1;transform:scale(1.05) translateY(-4px)}55%{opacity:1;transform:scale(1.35) translateY(-15px)}100%{opacity:0;transform:scale(2) translateY(-38px)}}
+@keyframes ripple{0%{opacity:.9;transform:scale(.35)}100%{opacity:0;transform:scale(3.2)}}
+
+.bite-fish{position:absolute;left:14%;top:250px;font-size:46px;z-index:25;opacity:0;pointer-events:none;filter:drop-shadow(0 5px 4px rgba(0,0,0,.18));transform:scaleX(-1);}
+.bite-fish.approach{animation:fishApproach 1.35s ease-in-out forwards;}
+.bite-fish.hooked{animation:fishHooked .55s ease-in-out forwards;}
+@keyframes fishApproach{0%{left:14%;top:250px;opacity:0;transform:scaleX(-1) rotate(-5deg)}12%{opacity:1}65%{left:44%;top:225px;opacity:1;transform:scaleX(-1) rotate(4deg)}100%{left:49%;top:205px;opacity:1;transform:scaleX(-1) rotate(-8deg)}}
+@keyframes fishHooked{0%{left:49%;top:205px;opacity:1;transform:scaleX(-1) rotate(-8deg)}35%{left:51%;top:190px;transform:scaleX(-1) rotate(18deg)}100%{left:52%;top:145px;opacity:0;transform:scaleX(-1) rotate(42deg)}}
+
+@keyframes fishJump{0%{opacity:0;transform:translate(0,20px) rotate(-20deg)}15%{opacity:1}50%{opacity:1;transform:translate(130px,-75px) rotate(20deg)}85%{opacity:1}100%{opacity:0;transform:translate(260px,24px) rotate(65deg)}}
+@keyframes microRipple{0%,82%{opacity:0;transform:scale(.3)}86%{opacity:.65}100%{opacity:0;transform:scale(2.4)}}
+@keyframes goldPop{0%{transform:scale(.2) rotate(-20deg);opacity:0}70%{transform:scale(1.35) rotate(8deg)}100%{transform:scale(1)}}
+@keyframes glow{from{filter:drop-shadow(0 0 4px gold)}to{filter:drop-shadow(0 0 22px #fff000)}}
+@keyframes coinFly{to{transform:translate(var(--x),var(--y)) rotate(720deg);opacity:0}}
+
+.seagull{position:absolute;left:-90px;top:35px;font-size:38px;z-index:9;opacity:0;pointer-events:none;filter:drop-shadow(0 4px 3px rgba(0,0,0,.12))}
+.seagull.fly{animation:seagullFly 8s linear}
+.dragonfly{position:absolute;right:-70px;bottom:54px;font-size:29px;z-index:9;opacity:0;pointer-events:none}
+.dragonfly.fly{animation:dragonflyFly 6.5s ease-in-out}
+.bottle{position:absolute;top:25px;left:-80px;font-size:42px;z-index:12;opacity:0;cursor:pointer;filter:drop-shadow(0 6px 4px rgba(0,0,0,.18));user-select:none}
+.bottle.drift{animation:bottleDrift 12s linear forwards}
+.note-toast{position:absolute;left:50%;top:74px;transform:translateX(-50%) translateY(-8px);z-index:30;max-width:340px;padding:12px 15px;border-radius:14px;background:rgba(255,249,214,.95);border:2px solid rgba(221,168,42,.55);box-shadow:0 10px 24px rgba(0,45,70,.2);font-size:14px;font-weight:700;text-align:center;opacity:0;pointer-events:none}
+.note-toast.show{animation:noteToast 4s ease}
+@keyframes seagullFly{0%{opacity:0;transform:translate(-60px,12px) scale(.75)}8%{opacity:1}45%{transform:translate(590px,-8px) scale(1)}100%{opacity:0;transform:translate(1280px,22px) scale(.8)}}
+@keyframes dragonflyFly{0%{opacity:0;transform:translate(0,0) rotate(8deg)}10%{opacity:1}25%{transform:translate(-260px,-34px) rotate(-8deg)}48%{transform:translate(-520px,15px) rotate(9deg)}72%{transform:translate(-790px,-28px) rotate(-6deg)}100%{opacity:0;transform:translate(-1160px,4px) rotate(4deg)}}
+@keyframes bottleDrift{0%{opacity:0;transform:translateX(0) rotate(-14deg)}8%{opacity:1}50%{transform:translateX(560px) translateY(8px) rotate(12deg)}92%{opacity:1}100%{opacity:0;transform:translateX(1180px) rotate(-10deg)}}
+@keyframes noteToast{0%{opacity:0;transform:translateX(-50%) translateY(-14px) scale(.92)}12%,82%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}100%{opacity:0;transform:translateX(-50%) translateY(-10px) scale(.96)}}
+
+
+.game-menu{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.menu-btn{background:rgba(255,255,255,.9);color:#14546e;border:1px solid #b9e4f2;padding:10px 14px;font-size:14px;border-radius:12px}
+.menu-btn.active{background:linear-gradient(var(--accent),var(--accent2));color:#392000;border-color:transparent}
+.progress{height:10px;background:rgba(0,70,100,.12);border-radius:999px;overflow:hidden;margin-top:8px}.progress>span{display:block;height:100%;background:linear-gradient(90deg,#ffb703,#fb8500);width:0;transition:width .35s}
+.panel{display:none;background:rgba(255,255,255,.94);border:1px solid rgba(0,90,130,.18);border-radius:18px;padding:14px;margin:0 0 12px;box-shadow:0 8px 24px rgba(0,80,120,.12)}
+.panel.open{display:block}.panel h2{margin:0 0 10px;font-size:22px;color:#086788}
+.collection-grid,.shop-grid,.quest-grid,.location-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.fish-card,.shop-item,.quest-item,.location-card{border:1px solid #c7e8f2;border-radius:14px;padding:12px;background:#f9feff;min-height:120px;position:relative}
+.fish-card.locked{filter:grayscale(1);opacity:.62}.fish-card .big{font-size:44px}.rarity{font-size:12px;font-weight:800;border-radius:999px;padding:4px 8px;display:inline-block;background:#e9f8fd}.rare{background:#e7e6ff}.legendary{background:#fff0b8}.count{font-size:13px;opacity:.72;margin-top:5px}
+.shop-item button,.location-card button{width:100%;margin-top:8px;padding:9px 10px;font-size:14px}.owned{color:#14804a;font-weight:800}.locked-note{font-size:12px;opacity:.7}.shop-section{grid-column:1/-1;margin:8px 0 0;padding:10px 12px;border-radius:14px;background:linear-gradient(90deg,rgba(10,105,140,.12),rgba(255,255,255,.15));font-weight:900;color:#075b7a}.equipped{margin-top:8px;padding:6px 8px;border-radius:9px;background:#e9fff3;color:#087742;font-weight:900;font-size:12px}
+.quest-item.done{border-color:#5bbb82;background:#effcf4}.quest-title{font-weight:800}.quest-reward{margin-top:8px;font-size:13px;color:#9a5a00}
+.location-card.active{outline:3px solid rgba(255,183,3,.45)}
+.weather-badge{position:absolute;right:12px;top:12px;z-index:21;background:rgba(255,255,255,.78);padding:7px 10px;border-radius:999px;font-size:13px;font-weight:800;backdrop-filter:blur(5px)}
+.sea.sunset{background:linear-gradient(#ee9b73,#5b8fc0 43%,#17537e)}.sky.sunset{background:linear-gradient(#ffcf9e,#f6a4b7)}
+.sea.night{background:linear-gradient(#143f67,#0b2f55 46%,#061d39)}.sky.night{background:linear-gradient(#101b3f,#243f71)}
+.sky.night .sun{filter:grayscale(1);font-size:0}.sky.night .sun:after{content:'🌙';font-size:70px}.sky.sunset .sun{filter:hue-rotate(330deg)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);padding:11px 16px;background:#12344a;color:white;border-radius:14px;z-index:100;opacity:0;pointer-events:none}.toast.show{animation:toast 2.8s ease}@keyframes toast{0%{opacity:0;transform:translateX(-50%) translateY(18px)}12%,82%{opacity:1;transform:translateX(-50%) translateY(0)}100%{opacity:0;transform:translateX(-50%) translateY(12px)}}
+
+
+/* v1.1 — Living Weather */
+.weather-badge{cursor:pointer;user-select:none;transition:transform .2s,background .3s}.weather-badge:hover{transform:translateY(-1px);background:rgba(255,255,255,.94)}
+.weather-layer{position:absolute;inset:0;pointer-events:none;z-index:18;overflow:hidden;opacity:0;transition:opacity 1.2s ease}
+.weather-layer.show{opacity:1}
+.stars{position:absolute;inset:0;z-index:2;opacity:0;transition:opacity 1.5s;background-image:radial-gradient(circle at 12% 18%,#fff 0 1px,transparent 1.8px),radial-gradient(circle at 28% 42%,#fff 0 1.2px,transparent 2px),radial-gradient(circle at 44% 15%,#fff 0 1px,transparent 1.8px),radial-gradient(circle at 61% 34%,#fff 0 1.1px,transparent 1.9px),radial-gradient(circle at 78% 18%,#fff 0 1px,transparent 1.8px),radial-gradient(circle at 91% 42%,#fff 0 1.2px,transparent 2px);background-size:180px 110px;animation:twinkle 4s ease-in-out infinite alternate}
+.sky.night .stars{opacity:.9}.sky.sunset .stars{opacity:.12}
+.rain{background-image:linear-gradient(103deg,transparent 46%,rgba(224,246,255,.42) 47% 53%,transparent 54%);background-size:34px 26px;animation:rainFall .78s linear infinite;filter:blur(.08px)}
+.sky.rainy .rain{opacity:.44}
+.sky.stormy .rain{opacity:.56;background-image:linear-gradient(104deg,transparent 45%,rgba(224,246,255,.48) 47% 53%,transparent 55%);background-size:28px 22px;animation-duration:.62s}
+.fog{background:linear-gradient(90deg,transparent,rgba(255,255,255,.72),transparent);filter:blur(8px);transform:scale(1.15);animation:fogDrift 12s ease-in-out infinite alternate}
+.lightning{background:rgba(255,255,255,.9);mix-blend-mode:screen}.lightning.flash{animation:flash .7s ease-out}
+.leaf{position:absolute;top:-40px;font-size:22px;opacity:.75;animation:leafFall 9s linear forwards}
+.jelly{position:absolute;bottom:-70px;font-size:38px;opacity:.52;z-index:2;animation:jellyRise 11s ease-in forwards}
+.sea.rainy{background:linear-gradient(#578ca5,#24647f 46%,#123f5e)}.sky.rainy{background:linear-gradient(#7fa1b5,#c0ced7)}
+.sea.foggy{filter:saturate(.68) brightness(.96)}.sky.foggy{background:linear-gradient(#c7d4d8,#edf2f2)}
+.sea.stormy{background:linear-gradient(#385a71,#173f59 44%,#092b42)}.sky.stormy{background:linear-gradient(#334756,#788a94)}
+.sky.rainy .sun,.sky.foggy .sun,.sky.stormy .sun{opacity:.25;filter:grayscale(.8)}
+.sky.stormy .cloud{filter:grayscale(1) brightness(.58);transform:scale(1.2)}
+.game.storm-shake{animation:stormShake .35s linear 2}
+@keyframes rainFall{from{background-position:0 -26px}to{background-position:-7px 0}}
+@keyframes fogDrift{from{transform:translateX(-16%) scale(1.15)}to{transform:translateX(16%) scale(1.15)}}
+@keyframes flash{0%,100%{opacity:0}12%{opacity:.95}24%{opacity:.08}40%{opacity:.7}55%{opacity:0}}
+@keyframes twinkle{from{filter:brightness(.75)}to{filter:brightness(1.35)}}
+@keyframes leafFall{0%{transform:translate(0,0) rotate(0);opacity:0}10%{opacity:.8}100%{transform:translate(var(--drift),760px) rotate(650deg);opacity:0}}
+@keyframes jellyRise{0%{transform:translateY(0) scale(.75);opacity:0}18%{opacity:.5}100%{transform:translateY(-560px) translateX(var(--sway)) scale(1.1);opacity:0}}
+@keyframes stormShake{25%{transform:translateX(1px)}75%{transform:translateX(-1px)}}
+
+@media(max-width:700px){
+ .stats{grid-template-columns:repeat(2,1fr)} .sky{height:180px}.sea{height:430px}
+ .boat{left:34%;font-size:90px}.fisher{left:43%;bottom:55px}.island{right:4%}
+ .result{left:9px;top:9px;width:min(280px,calc(100% - 18px))}
+}
+
+/* v1.2 Trophy Hunt */
+.trophy-shadow{position:absolute;left:-35%;top:250px;width:260px;height:78px;border-radius:55% 45% 50% 50%;background:rgba(0,30,55,.38);filter:blur(7px);z-index:1;opacity:0;pointer-events:none}
+.trophy-shadow.show{animation:trophyPass 5.8s ease-in-out forwards}
+@keyframes trophyPass{0%{left:-35%;opacity:0;transform:scale(.75)}20%{opacity:.8}70%{opacity:.7;transform:scale(1.2)}100%{left:110%;opacity:0;transform:scale(.9)}}
+.fight-overlay{position:absolute;inset:0;z-index:40;background:transparent;display:none;align-items:flex-start;justify-content:flex-start;padding:292px 12px 10px;pointer-events:none}
+.fight-overlay.show{display:flex}
+.fight-card{width:196px;background:linear-gradient(180deg,rgba(247,253,255,.91),rgba(215,244,255,.89));border:2px solid rgba(255,255,255,.82);border-radius:18px;padding:9px;box-shadow:0 9px 24px rgba(0,35,60,.22);backdrop-filter:blur(4px);text-align:center;pointer-events:auto}
+.fight-fish{font-size:38px;animation:thrash .55s ease-in-out infinite alternate;filter:drop-shadow(0 4px 4px rgba(0,0,0,.17));line-height:1}
+.fight-card h2{font-size:14px;margin:2px 0 5px}.fight-meters{display:flex;justify-content:center;gap:14px;margin:5px 0 8px}.vertical-meter-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9px;font-weight:900}.meter.vertical{width:27px;height:118px;background:rgba(185,214,227,.9);border-radius:14px;overflow:hidden;border:2px solid rgba(255,255,255,.9);position:relative;display:flex;align-items:flex-end;margin:0}.meter.vertical>div{width:100%;height:50%;transition:height .12s linear}.meter.vertical #tensionFill{background:linear-gradient(0deg,#32c96f 0 55%,#ffc53d 70%,#ef476f 92%)}.meter.vertical #progressFill{background:linear-gradient(0deg,#1ca7ec,#0d6efd)}.meter.vertical .safe-zone{position:absolute;left:0;right:0;bottom:28%;height:36%;border-top:2px dashed rgba(255,255,255,.95);border-bottom:2px dashed rgba(255,255,255,.95);pointer-events:none}.reel-btn{width:100%;font-size:14px;padding:10px 7px;border-radius:12px;border:0;background:linear-gradient(#ffcc4d,#fb8500);font-weight:900;color:#433000;box-shadow:0 4px 0 #c66300;cursor:pointer;user-select:none}.reel-btn:active{transform:translateY(3px);box-shadow:0 1px 0 #c66300}.fight-tip{font-size:9px;opacity:.72;margin-top:6px;line-height:1.2}.trophy-badge{display:inline-block;background:#6f42c1;color:white;border-radius:999px;padding:3px 7px;font-size:9px;font-weight:800;margin-bottom:2px}@media(max-width:700px){.fight-overlay{padding:278px 7px 7px}.fight-card{width:172px;padding:8px}.meter.vertical{height:102px;width:25px}.fight-fish{font-size:34px}.fight-tip{display:none}}
+
+/* v1.3 — World Map & Boats */
+.world-map{position:relative;min-height:520px;border-radius:22px;overflow:hidden;background:linear-gradient(#8ed8ef 0 42%,#238bb8 43% 100%);border:2px solid #bfefff;box-shadow:inset 0 0 60px rgba(0,65,100,.18)}
+.world-map:before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 18% 18%,rgba(255,255,255,.55),transparent 14%),radial-gradient(circle at 72% 35%,rgba(255,255,255,.3),transparent 18%),repeating-radial-gradient(ellipse at 50% 80%,rgba(255,255,255,.15) 0 2px,transparent 3px 22px);opacity:.7}
+.map-land{position:absolute;border:3px solid rgba(41,112,74,.45);background:linear-gradient(145deg,#8fd17f,#4da66d);box-shadow:inset 0 -14px 0 rgba(39,120,78,.22),0 8px 18px rgba(0,70,80,.18);z-index:1;opacity:.95}.map-land.one{left:4%;top:10%;width:38%;height:38%;border-radius:48% 52% 44% 56%/58% 42% 58% 42%;transform:rotate(-8deg)}.map-land.two{right:3%;top:12%;width:34%;height:32%;border-radius:54% 46% 62% 38%/45% 58% 42% 55%;transform:rotate(10deg)}.map-land.three{left:30%;bottom:4%;width:45%;height:28%;border-radius:45% 55% 38% 62%/52% 44% 56% 48%;transform:rotate(3deg)}.map-mountain{position:absolute;z-index:2;font-size:46px;filter:drop-shadow(0 5px 5px rgba(0,0,0,.18));pointer-events:none}.map-compass{position:absolute;right:18px;bottom:16px;z-index:4;width:62px;height:62px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.88);border:2px solid rgba(0,85,120,.25);font-size:34px;box-shadow:0 6px 18px rgba(0,60,90,.18)}.map-label{position:absolute;z-index:2;font-weight:900;color:rgba(21,78,63,.62);letter-spacing:.08em;text-transform:uppercase;pointer-events:none}.panel-screen-open #game{display:none}.panel-screen-open .panel.open{display:block;min-height:500px}.boat-panel-note{background:#e9f8ff;border:1px solid #b8e4f2;border-radius:14px;padding:10px 12px;margin-bottom:12px}.boat-card h3{margin:6px 0}.boat-card .boat-icon{filter:drop-shadow(0 7px 5px rgba(0,0,0,.15))}
+.map-route{position:absolute;height:4px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.9) 0 10px,transparent 10px 20px);transform-origin:left center;filter:drop-shadow(0 2px 2px rgba(0,0,0,.2))}
+.map-node{position:absolute;transform:translate(-50%,-50%);width:142px;padding:10px;text-align:center;border-radius:18px;background:rgba(255,255,255,.93);border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 28px rgba(0,60,90,.2);z-index:3;transition:.2s}
+.map-node:hover{transform:translate(-50%,-53%)}.map-node.active{outline:4px solid rgba(255,183,3,.7)}.map-node.locked{filter:grayscale(.75);opacity:.72}
+.map-node .map-icon{font-size:42px}.map-node b{display:block}.map-node small{display:block;opacity:.72;margin:3px 0 6px}.map-node button{padding:8px 10px;font-size:13px;width:100%}
+.boat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}.boat-card{background:linear-gradient(180deg,#fbfeff,#e8f8ff);border:1px solid #bfe5f1;border-radius:18px;padding:14px;position:relative}.boat-card.active{outline:3px solid rgba(255,183,3,.55)}.boat-card .boat-icon{font-size:58px;text-align:center}.boat-stats{font-size:13px;line-height:1.5}.boat-price{font-weight:900;color:#a45b00}.boat-card button{width:100%;margin-top:9px;padding:10px;font-size:14px}
+.travel-overlay{position:fixed;inset:0;background:linear-gradient(#bfeeff 0 44%,#1f93bf 45% 100%);z-index:999;display:none;align-items:center;justify-content:center;overflow:hidden}.travel-overlay.show{display:flex}.travel-sun{position:absolute;right:10%;top:8%;font-size:80px}.travel-cloud{position:absolute;top:15%;left:-120px;font-size:60px;animation:travelCloud 8s linear infinite}.travel-wave{position:absolute;left:-5%;bottom:40%;width:110%;height:35px;border-top:7px solid rgba(255,255,255,.75);border-radius:50%;animation:wave 1.5s ease-in-out infinite alternate}.travel-boat{position:absolute;left:-180px;top:43%;font-size:110px;animation:sailAcross 2.7s ease-in-out forwards;filter:drop-shadow(0 12px 8px rgba(0,0,0,.2))}.travel-card{position:absolute;bottom:11%;background:rgba(255,255,255,.9);padding:14px 22px;border-radius:18px;text-align:center;box-shadow:0 12px 30px rgba(0,50,80,.2)}.travel-card b{display:block;font-size:22px}.travel-progress{width:260px;height:9px;background:#cde8f1;border-radius:999px;overflow:hidden;margin-top:9px}.travel-progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffb703,#fb8500);animation:travelLoad 2.5s linear forwards}
+@keyframes sailAcross{0%{left:-180px;transform:rotate(-2deg)}50%{transform:rotate(2deg) translateY(8px)}100%{left:105%;transform:rotate(-1deg)}}@keyframes travelCloud{to{left:110%}}@keyframes travelLoad{to{width:100%}}
+.location-title{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.current-trip{font-size:14px;background:#eaf8fd;border-radius:999px;padding:7px 11px}
+@media(max-width:700px){.world-map{min-height:650px}.map-node{width:122px}.map-node .map-icon{font-size:34px}.travel-boat{font-size:84px}.travel-card{width:88%}}
+
+
+/* v1.4.1 — лодка на воде, без синего декоративного пятна */
+.boat{
+  bottom:-34px !important;
+  animation:none !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  filter:drop-shadow(0 5px 3px rgba(0,45,70,.18));
+  line-height:1;
+}
+.fisher{
+  bottom:42px !important;
+  animation:none !important;
+  background:transparent !important;
+}
+.trophy-shadow{
+  display:none !important;
+}
+.surface{
+  top:-3px !important;
+  z-index:5 !important;
+}
+@media(max-width:700px){
+  .boat{bottom:-31px !important}
+  .fisher{bottom:39px !important}
+}
+
+
+/* v1.5 — living underwater world */
+.living-ocean{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden}
+.life-fish{position:absolute;left:0;top:0;font-size:var(--size,28px);opacity:var(--opacity,.8);filter:drop-shadow(0 4px 4px rgba(0,30,55,.18));will-change:transform;transition:filter .25s,opacity .25s}
+.life-fish .sprite{display:block;transform:scaleX(var(--face,1));animation:lifeTail .55s ease-in-out infinite alternate}
+.life-fish.deep{filter:blur(.25px) saturate(.8);opacity:.48}
+.life-fish.near{filter:drop-shadow(0 6px 5px rgba(0,20,45,.22)) saturate(1.12)}
+.life-fish.curious .sprite{animation:curiousPulse .45s ease-in-out infinite alternate}
+.life-fish.scared .sprite{animation:panicWiggle .16s ease-in-out infinite alternate}
+.predator-shadow{position:absolute;left:-180px;top:245px;font-size:84px;opacity:0;filter:blur(1px) saturate(.55);transform:scaleX(-1);z-index:1}
+.predator-shadow.hunt{animation:predatorCruise 5.2s ease-in-out forwards}
+.plankton{position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(220,255,245,.7);box-shadow:0 0 7px rgba(200,255,240,.75);animation:planktonFloat var(--dur,8s) ease-in-out infinite;opacity:.45}
+@keyframes lifeTail{from{transform:scaleX(var(--face,1)) rotate(-2deg)}to{transform:scaleX(var(--face,1)) rotate(3deg)}}
+@keyframes curiousPulse{from{transform:scaleX(var(--face,1)) scale(.96) rotate(-4deg)}to{transform:scaleX(var(--face,1)) scale(1.05) rotate(5deg)}}
+@keyframes panicWiggle{from{transform:scaleX(var(--face,1)) rotate(-12deg)}to{transform:scaleX(var(--face,1)) rotate(12deg)}}
+@keyframes predatorCruise{0%{left:-180px;opacity:0;transform:scaleX(-1) translateY(0)}12%{opacity:.43}55%{opacity:.52;transform:scaleX(-1) translateY(-22px)}100%{left:112%;opacity:0;transform:scaleX(-1) translateY(12px)}}
+@keyframes planktonFloat{0%,100%{transform:translate(0,0);opacity:.22}45%{transform:translate(15px,-30px);opacity:.7}75%{transform:translate(-10px,-12px);opacity:.38}}
+
+
+
+/* v1.5.2 — вся игровая сцена помещается в окно, панель максимально низко */
+html,body{overflow-x:hidden}
+body{min-height:100vh}
+.wrap{max-width:1020px;padding:6px 10px 10px}
+h1{font-size:clamp(24px,3.6vw,36px);line-height:1;margin-bottom:1px}
+.subtitle{font-size:12px;margin:0 0 6px}
+.stats{gap:6px;margin-bottom:6px}
+.card{padding:6px 9px;border-radius:12px}
+.value{font-size:20px}
+.game-menu{gap:5px;margin-bottom:6px}
+.menu-btn{padding:6px 10px;font-size:12px;border-radius:9px}
+.game{border-radius:18px;border-width:2px}
+.sky{height:150px}
+.sea{height:345px}
+.sun{top:12px;font-size:52px}
+.cloud{font-size:40px}.c1{top:20px}.c2{top:70px;font-size:30px}
+.island{font-size:54px}
+.boat{font-size:88px!important;bottom:-30px!important}
+.fisher{font-size:32px;bottom:48px}
+.ray{height:300px}
+
+.fight-overlay{
+  align-items:flex-end!important;
+  justify-content:flex-start!important;
+  padding:0 8px 5px!important;
+}
+.fight-card{
+  width:142px!important;
+  padding:5px!important;
+  border-radius:13px!important;
+}
+.fight-fish{font-size:27px!important}
+.fight-card h2{font-size:11px!important;margin:1px 0 2px!important}.fight-personality{font-size:9px;font-weight:900;line-height:1.15;margin:0 0 3px;padding:3px 6px;border-radius:999px;background:rgba(13,110,253,.11);color:#075985;border:1px solid rgba(13,110,253,.18)}
+.fight-meters{gap:8px!important;margin:2px 0 4px!important}
+.vertical-meter-wrap{gap:1px!important;font-size:7px!important}
+.meter.vertical{width:20px!important;height:76px!important;border-radius:10px!important;border-width:1px!important}
+.reel-btn{font-size:11px!important;padding:6px 4px!important;border-radius:9px!important;box-shadow:0 3px 0 #c66300!important}
+.fight-tip{display:none!important}
+.trophy-badge{font-size:7px!important;padding:2px 5px!important;margin:0!important}
+
+@media(max-height:760px) and (min-width:701px){
+  .wrap{padding-top:3px}
+  h1{font-size:27px}
+  .subtitle{display:none}
+  .stats{margin-bottom:4px}
+  .card{padding:4px 8px;font-size:11px}
+  .value{font-size:18px}
+  .game-menu{margin-bottom:4px}
+  .menu-btn{padding:5px 8px}
+  .sky{height:130px}
+  .sea{height:325px}
+  .boat{font-size:82px!important}
+  .fisher{font-size:29px;bottom:45px}
+}
+
+@media(max-width:700px){
+  .wrap{padding:4px 5px 8px}
+  h1{font-size:25px}
+  .subtitle{display:none}
+  .stats{gap:4px;margin-bottom:4px}
+  .card{padding:5px 6px;font-size:11px}
+  .value{font-size:17px}
+  .game-menu{gap:3px;margin-bottom:4px}
+  .menu-btn{padding:5px 7px;font-size:11px}
+  .sky{height:130px!important}
+  .sea{height:330px!important}
+  .fight-overlay{padding:0 5px 4px!important}
+  .fight-card{width:132px!important}
+  .meter.vertical{height:68px!important;width:18px!important}
+}
+
+
+/* v1.6 — living water and catch effects */
+.water-fx-layer{position:absolute;inset:0;z-index:29;pointer-events:none;overflow:hidden}
+.fx-ring{position:absolute;width:34px;height:11px;border:2px solid rgba(255,255,255,.82);border-radius:50%;opacity:0;transform:translate(-50%,-50%) scale(.25);animation:fxRing 1.25s ease-out forwards;filter:drop-shadow(0 1px 1px rgba(0,80,120,.3))}
+.fx-ring.soft{border-width:1.5px;animation-duration:1.8s;opacity:.65}
+.fx-drop{position:absolute;width:5px;height:11px;border-radius:50% 50% 55% 55%;background:rgba(235,252,255,.92);transform:translate(-50%,-50%);animation:fxDrop .75s ease-out forwards}
+.fx-foam{position:absolute;font-size:24px;line-height:1;transform:translate(-50%,-50%);animation:fxFoam .9s ease-out forwards;filter:drop-shadow(0 2px 2px rgba(0,70,100,.22))}
+.fx-trail{position:absolute;width:70px;height:12px;border-top:3px solid rgba(255,255,255,.55);border-radius:50%;transform:translate(-50%,-50%) rotate(var(--rot,0deg));animation:fxTrail .85s ease-out forwards}
+.game.bite-pulse .sea{animation:seaBitePulse .48s ease-out}
+.game.bite-pulse .boat{animation:boatHookJolt .5s ease-out}
+.game.catch-pulse{animation:catchPulse .58s ease-out}
+.fight-overlay.show~*{}
+@keyframes fxRing{0%{opacity:.9;transform:translate(-50%,-50%) scale(.25)}100%{opacity:0;transform:translate(-50%,-50%) scale(3.8)}}
+@keyframes fxDrop{0%{opacity:1;transform:translate(-50%,-50%) translate(0,0) scale(.8)}100%{opacity:0;transform:translate(-50%,-50%) translate(var(--dx),var(--dy)) scale(.25)}}
+@keyframes fxFoam{0%{opacity:0;transform:translate(-50%,-50%) scale(.35)}28%{opacity:1}100%{opacity:0;transform:translate(-50%,-85%) scale(1.55)}}
+@keyframes fxTrail{0%{opacity:.85;transform:translate(-50%,-50%) rotate(var(--rot,0deg)) scaleX(.3)}100%{opacity:0;transform:translate(-50%,-50%) rotate(var(--rot,0deg)) scaleX(1.8)}}
+@keyframes seaBitePulse{0%,100%{filter:none}45%{filter:brightness(1.08) saturate(1.12)}}
+@keyframes boatHookJolt{0%,100%{transform:translateY(0) rotate(0)}30%{transform:translateY(2px) rotate(-1deg)}55%{transform:translateY(-2px) rotate(1.2deg)}}
+@keyframes catchPulse{0%,100%{filter:none}45%{filter:brightness(1.08)}}
+
+
+
+/* v1.8 — Living World & Atmosphere */
+.atmosphere-layer{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:6}
+.sky-glow{position:absolute;left:8%;right:8%;bottom:-22px;height:58px;border-radius:50%;background:radial-gradient(ellipse,rgba(255,248,190,.38),transparent 67%);filter:blur(4px);animation:skyGlow 6s ease-in-out infinite alternate}
+.haze-band{position:absolute;left:-8%;right:-8%;bottom:0;height:42px;background:linear-gradient(transparent,rgba(255,255,255,.2));filter:blur(5px);animation:hazeMove 12s ease-in-out infinite alternate}
+.far-birds{position:absolute;left:-12%;top:22%;font-size:12px;letter-spacing:13px;opacity:.58;animation:farBirds 24s linear infinite;white-space:nowrap}
+.far-birds:before{content:'⌁  ⌁  ⌁'}
+.wind-streak{position:absolute;width:92px;height:2px;border-radius:50%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.66),transparent);opacity:.45;animation:windStreak 8s linear infinite}
+.wind-streak.w1{left:-15%;top:24%;animation-delay:-1s}.wind-streak.w2{left:-20%;top:46%;width:128px;animation-delay:-4.3s}.wind-streak.w3{left:-18%;top:66%;width:72px;animation-delay:-6.1s}
+.sun-path{position:absolute;left:43%;top:0;width:18%;height:100%;z-index:4;opacity:.42;filter:blur(.5px);background:linear-gradient(110deg,transparent 0 16%,rgba(255,246,171,.1) 33%,rgba(255,255,255,.48) 49%,rgba(255,238,126,.1) 66%,transparent 84%);clip-path:polygon(42% 0,58% 0,100% 100%,0 100%);animation:sunPath 4.6s ease-in-out infinite alternate}
+.surface-sparkles{position:absolute;left:8%;right:6%;top:3px;height:55px;z-index:7;opacity:.76;background-image:radial-gradient(ellipse at 10% 18%,rgba(255,255,255,.95) 0 1px,transparent 2px),radial-gradient(ellipse at 22% 55%,rgba(255,245,180,.92) 0 1.2px,transparent 2.4px),radial-gradient(ellipse at 38% 30%,rgba(255,255,255,.82) 0 1px,transparent 2.2px),radial-gradient(ellipse at 54% 62%,rgba(255,246,165,.9) 0 1.4px,transparent 2.7px),radial-gradient(ellipse at 71% 24%,rgba(255,255,255,.9) 0 1px,transparent 2.3px),radial-gradient(ellipse at 88% 58%,rgba(255,248,185,.9) 0 1.3px,transparent 2.5px);background-size:120px 28px,150px 34px,180px 30px,130px 38px,160px 27px,140px 36px;animation:sparkleDrift 5.2s linear infinite}
+.reed-bank{position:absolute;left:-4px;bottom:5px;z-index:8;width:112px;height:112px;transform-origin:bottom left;filter:drop-shadow(0 3px 2px rgba(0,40,35,.18))}
+.reed-bank.right{left:auto;right:-5px;transform:scaleX(-1)}
+.reed{position:absolute;bottom:0;width:4px;border-radius:999px;background:linear-gradient(#5b8f34,#28622c);transform-origin:bottom center;animation:reedSway 3.2s ease-in-out infinite alternate}
+.reed:after{content:'';position:absolute;left:-3px;top:-9px;width:10px;height:17px;border-radius:55%;background:#6b4b24}
+.reed.r1{left:12px;height:86px;animation-delay:-.4s}.reed.r2{left:29px;height:106px;animation-delay:-1.6s}.reed.r3{left:47px;height:72px;animation-delay:-2.1s}.reed.r4{left:66px;height:94px;animation-delay:-.9s}.reed.r5{left:84px;height:64px;animation-delay:-2.7s}
+.lily{position:absolute;z-index:7;font-size:21px;opacity:.84;filter:drop-shadow(0 3px 2px rgba(0,40,50,.22));animation:lilyBob 3.4s ease-in-out infinite alternate}.lily.l1{left:14%;top:40px}.lily.l2{right:17%;top:72px;animation-delay:-1.7s}.lily.l3{left:72%;top:122px;font-size:15px;animation-delay:-2.4s}
+.ambient-bubble{position:absolute;bottom:-16px;width:8px;height:8px;border:1.6px solid rgba(220,252,255,.78);border-radius:50%;z-index:3;opacity:0;animation:ambientBubble var(--dur) ease-in infinite}.ambient-bubble:after{content:'';position:absolute;left:1px;top:1px;width:2px;height:2px;border-radius:50%;background:rgba(255,255,255,.85)}
+.fry-school{position:absolute;left:-16%;top:34%;z-index:4;display:flex;gap:5px;font-size:12px;opacity:.55;filter:saturate(.75);animation:fryCruise 17s linear infinite}.fry-school.fry2{top:65%;animation-duration:23s;animation-delay:-9s;transform:scale(.75)}.fry-school.scatter{animation:fryScatter 1.2s ease-out}
+.ambient-bird{position:absolute;left:-80px;top:18%;z-index:10;font-size:25px;opacity:0;filter:drop-shadow(0 3px 2px rgba(0,0,0,.12))}.ambient-bird.fly{animation:ambientBirdFly 7s ease-in-out forwards}
+.ambient-insect{position:absolute;right:-35px;top:62%;z-index:11;font-size:15px;opacity:0}.ambient-insect.fly{animation:ambientInsectFly 8s ease-in-out forwards}
+.world-breeze .cloud{animation-duration:18s!important}.world-breeze .reed{animation-duration:1.8s}.world-breeze .surface-sparkles{animation-duration:2.8s}
+@keyframes skyGlow{to{opacity:.7;transform:scaleX(1.08)}}
+@keyframes hazeMove{to{transform:translateX(5%) scaleY(1.08)}}
+@keyframes farBirds{0%{transform:translateX(0);opacity:0}8%,88%{opacity:.55}100%{transform:translateX(125vw);opacity:0}}
+@keyframes windStreak{0%{transform:translateX(0);opacity:0}14%,70%{opacity:.5}100%{transform:translateX(130vw);opacity:0}}
+@keyframes sunPath{to{opacity:.58;transform:translateX(8px) scaleX(1.07)}}
+@keyframes sparkleDrift{to{background-position:120px 0,150px 0,180px 0,130px 0,160px 0,140px 0}}
+@keyframes reedSway{from{transform:rotate(-2deg)}to{transform:rotate(4deg)}}
+@keyframes lilyBob{to{transform:translateY(3px) rotate(2deg)}}
+@keyframes ambientBubble{0%{transform:translate(0,0) scale(.65);opacity:0}16%{opacity:.72}70%{opacity:.55}100%{transform:translate(var(--sway),-360px) scale(1.2);opacity:0}}
+@keyframes fryCruise{0%{left:-18%;transform:translateY(0) scaleX(1)}48%{transform:translateY(-12px) scaleX(1)}49%{left:108%;transform:translateY(-12px) scaleX(1)}50%{left:108%;transform:translateY(-12px) scaleX(-1)}99%{left:-18%;transform:translateY(8px) scaleX(-1)}100%{transform:scaleX(1)}}
+@keyframes fryScatter{0%{filter:blur(0);letter-spacing:0}55%{filter:blur(.5px);letter-spacing:14px;opacity:.85}100%{letter-spacing:2px;opacity:.45}}
+@keyframes ambientBirdFly{0%{left:-80px;opacity:0;transform:translateY(10px) rotate(-4deg)}12%{opacity:1}45%{transform:translate(52vw,-18px) rotate(3deg)}100%{left:108%;opacity:0;transform:translateY(14px) rotate(-2deg)}}
+@keyframes ambientInsectFly{0%{right:-35px;opacity:0}12%{opacity:.9}30%{transform:translate(-25vw,-25px) rotate(12deg)}58%{transform:translate(-55vw,15px) rotate(-10deg)}82%{opacity:.8}100%{right:108%;opacity:0;transform:translateY(-12px)}}
+@media(max-width:700px){.reed-bank{transform:scale(.72);transform-origin:bottom left}.reed-bank.right{transform:scaleX(-1) scale(.72);transform-origin:bottom right}.lily.l3,.wind-streak.w3{display:none}.far-birds{font-size:10px}.sun-path{left:37%;width:26%}}
+
+
+/* v1.9 — cinematic day / sunset / night cycle */
+.sky,.sea{transition:background 5s ease,filter 5s ease}
+.sun{transition:top 5s ease,right 5s ease,transform 5s ease,filter 5s ease,opacity 4s ease}
+.sky.v19-dawn{background:linear-gradient(#8fcbea,#ffe5bb)}
+.sea.v19-dawn{background:linear-gradient(#5abfd3,#277fa8 48%,#155a82)}
+.sky.v19-dawn .sun{right:76%;top:54px;transform:scale(.78);filter:hue-rotate(330deg) saturate(1.2)}
+.sky.v19-sunset{background:linear-gradient(#66559b 0%,#ef8c8c 50%,#ffd18a 100%)}
+.sea.v19-sunset{background:linear-gradient(#d78078,#79679a 42%,#294f79)}
+.sky.v19-sunset .sun{right:16%;top:68px;transform:scale(.86);filter:hue-rotate(325deg) saturate(1.55)}
+.sky.v19-night{background:linear-gradient(#09142f,#183b69)}
+.sea.v19-night{background:linear-gradient(#163e67,#092b4f 48%,#041a32)}
+.sky.v19-night .sun{opacity:0;transform:scale(.55)}
+.sky.v19-night .stars{opacity:.95}
+.sky.v19-sunset .stars{opacity:.2}
+.v19-moon{position:absolute;right:13%;top:22px;font-size:49px;z-index:5;opacity:0;transform:translateY(-12px) scale(.8);transition:opacity 4s ease,transform 5s ease;filter:drop-shadow(0 0 13px rgba(235,245,255,.75))}
+.sky.v19-night .v19-moon{opacity:1;transform:translateY(0) scale(1)}
+.v19-moon-road{position:absolute;right:8%;top:3%;width:24%;height:74%;z-index:3;opacity:0;transition:opacity 4s ease;background:linear-gradient(105deg,transparent 10%,rgba(220,238,255,.08) 34%,rgba(235,247,255,.5) 50%,rgba(220,238,255,.08) 65%,transparent 90%);clip-path:polygon(42% 0,58% 0,100% 100%,0 100%);filter:blur(1px);animation:v19MoonShimmer 3s ease-in-out infinite alternate}
+.sea.v19-night .v19-moon-road{opacity:.62}
+.v19-fireflies{position:absolute;inset:0;pointer-events:none;z-index:14;opacity:0;transition:opacity 3s ease}
+.game-v19-night .v19-fireflies{opacity:1}
+.v19-firefly{position:absolute;width:5px;height:5px;border-radius:50%;background:#fff6a1;box-shadow:0 0 8px 3px rgba(255,235,100,.8);animation:v19Firefly var(--d) ease-in-out infinite alternate;animation-delay:var(--delay)}
+.v19-time-label{position:absolute;left:50%;top:7px;transform:translateX(-50%);z-index:30;padding:4px 10px;border-radius:999px;background:rgba(10,42,66,.46);color:#fff;font-size:11px;font-weight:800;letter-spacing:.3px;backdrop-filter:blur(4px);opacity:.82;transition:background 3s ease}
+@keyframes v19Firefly{0%{transform:translate(0,0) scale(.65);opacity:.2}45%{opacity:1}100%{transform:translate(var(--x),var(--y)) scale(1.2);opacity:.45}}
+@keyframes v19MoonShimmer{to{transform:translateX(9px) scaleX(1.08);opacity:.8}}
+@media(max-width:700px){.v19-moon{font-size:39px}.v19-time-label{font-size:10px;top:4px}}
+
+
+/* v2.0.0 — карьера рыбака и микрокапли: меньше, короче и прозрачнее капли */
+
+/* v2.0.0 — карьера рыбака + микрокапли дождя */
+/* v2.0.1 — natural scattered rain: independent droplets instead of repeating stripes */
+.rain{background:none!important;animation:none!important;filter:none!important}
+.rain-drop{position:absolute;top:-12px;left:var(--left);width:1px;height:var(--length);border-radius:999px;background:rgba(224,246,255,var(--alpha));transform:rotate(var(--tilt));animation:naturalRainFall var(--duration) linear var(--delay) infinite;will-change:transform,opacity}
+.sky.rainy .rain{opacity:.54}
+.sky.stormy .rain{opacity:.68;background:none!important;animation:none!important}
+@keyframes naturalRainFall{0%{transform:translate3d(0,-14px,0) rotate(var(--tilt));opacity:0}8%{opacity:.9}88%{opacity:.72}100%{transform:translate3d(var(--drift),230px,0) rotate(var(--tilt));opacity:0}}
+.career-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0 14px}
+.career-mini{padding:11px;border-radius:14px;background:rgba(255,255,255,.72);box-shadow:inset 0 0 0 1px rgba(12,80,110,.1);text-align:center}
+.career-mini b{display:block;font-size:20px;color:#075b7a;margin-top:4px}
+.catch-log{display:grid;gap:8px;max-height:390px;overflow:auto;padding-right:4px}
+.catch-row{display:grid;grid-template-columns:48px 1fr auto;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.76);box-shadow:inset 0 0 0 1px rgba(12,80,110,.1)}
+.catch-row .catch-icon{font-size:30px;text-align:center}.catch-row small{display:block;opacity:.68;margin-top:2px}.catch-price{font-weight:900;color:#9b6500;text-align:right}.catch-empty{text-align:center;padding:28px;opacity:.68}
+.balance-pop{animation:balancePop .48s ease-out}@keyframes balancePop{45%{transform:scale(1.18);color:#d78a00}}
+@media(max-width:720px){.career-summary{grid-template-columns:repeat(2,1fr)}.catch-row{grid-template-columns:40px 1fr auto}}
+
+
+.upgrade-lab{grid-column:1/-1;border:1px solid #c7e8f2;border-radius:16px;padding:14px;background:linear-gradient(135deg,rgba(237,252,255,.96),rgba(255,249,225,.9));margin-bottom:8px}.upgrade-title{font-weight:900;color:#075b7a;margin-bottom:8px}.upgrade-row{display:grid;grid-template-columns:1.3fr .8fr .9fr auto;gap:8px;align-items:center;padding:8px 0;border-top:1px dashed rgba(7,91,122,.18)}.upgrade-row:first-of-type{border-top:0}.upgrade-bar{height:8px;background:#dcecf1;border-radius:999px;overflow:hidden}.upgrade-bar>span{display:block;height:100%;background:linear-gradient(90deg,#21a4c7,#f0b33b)}.upgrade-row button{padding:7px 10px;font-size:12px}@media(max-width:640px){.upgrade-row{grid-template-columns:1fr 1fr}.upgrade-row button{grid-column:1/-1;width:100%}}
+
+/* v2.7.0 — легендарные трофеи, турниры и база рыбака */
+.hall-grid,.tournament-grid,.lodge-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:13px}.hall-card,.tournament-card,.lodge-card{padding:15px;border-radius:17px;background:linear-gradient(#fff,#eefaff);border:1px solid #c4e4ee;box-shadow:0 8px 20px rgba(20,76,100,.08)}.hall-card.legend{background:linear-gradient(135deg,#fff8cf,#ffe2a3);border-color:#efc45d}.hall-icon{font-size:46px}.record-line{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed rgba(20,80,105,.16)}.record-line:last-child{border:0}.tournament-hero{padding:18px;border-radius:18px;background:linear-gradient(135deg,#123a55,#6b3c92);color:white;margin-bottom:14px}.tournament-progress{height:12px;border-radius:99px;background:rgba(255,255,255,.25);overflow:hidden;margin:10px 0}.tournament-progress span{display:block;height:100%;background:linear-gradient(90deg,#ffd34f,#ff8c42)}.podium{font-size:52px;text-align:center}.lodge-hero{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:18px;border-radius:18px;background:linear-gradient(135deg,#f6e4b3,#dba66b);color:#4c3017;margin-bottom:14px}.lodge-level{font-size:58px}.trophy-wall{display:flex;gap:8px;flex-wrap:wrap;font-size:34px;min-height:54px}.legend-alert{animation:legendGlow 1.1s ease-in-out infinite alternate}@keyframes legendGlow{from{filter:drop-shadow(0 0 3px #ffd34f)}to{filter:drop-shadow(0 0 16px #ff8b00);transform:scale(1.05)}}
+
+/* v2.6.0 — живой мир и экспедиции */
+.wildlife{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:7}.duck,.swan,.frog,.butterfly,.leaf-float{position:absolute;filter:drop-shadow(0 3px 3px rgba(0,0,0,.2));will-change:transform}.duck{font-size:28px;top:19%;left:-8%;animation:duckSwim 24s linear infinite}.duck.d2{top:29%;animation-delay:-12s;animation-duration:31s;font-size:22px}.swan{font-size:32px;top:10%;right:-10%;animation:swanSwim 34s linear infinite}.frog{font-size:24px;bottom:8%;left:8%;animation:frogHop 8s ease-in-out infinite}.butterfly{font-size:18px;top:8%;left:20%;animation:butterflyFly 12s ease-in-out infinite alternate}.butterfly.b2{left:70%;top:17%;animation-delay:-5s}.leaf-float{font-size:17px;top:33%;left:-5%;animation:leafDrift 19s linear infinite}.leaf-float.lf2{top:48%;animation-delay:-9s;animation-duration:26s}.mist-bank{position:absolute;left:-10%;right:-10%;top:3%;height:23%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),rgba(255,255,255,.44),rgba(255,255,255,.18),transparent);filter:blur(8px);opacity:0;animation:mistMove 18s ease-in-out infinite;z-index:5;pointer-events:none}.game.weather-fog .mist-bank,.game.time-dawn .mist-bank{opacity:.72}.star-reflections{position:absolute;inset:0;opacity:0;background-image:radial-gradient(circle,rgba(255,255,255,.85) 0 1px,transparent 2px);background-size:43px 29px;animation:starShimmer 4s ease-in-out infinite;pointer-events:none}.game.time-night .star-reflections{opacity:.35}
+@keyframes duckSwim{0%{transform:translateX(0) scaleX(1)}48%{transform:translateX(115vw) scaleX(1)}50%{transform:translateX(115vw) scaleX(-1)}98%{transform:translateX(0) scaleX(-1)}100%{transform:translateX(0) scaleX(1)}}
+@keyframes swanSwim{0%{transform:translateX(0) scaleX(-1)}48%{transform:translateX(-115vw) scaleX(-1)}50%{transform:translateX(-115vw) scaleX(1)}98%{transform:translateX(0) scaleX(1)}100%{transform:translateX(0) scaleX(-1)}}
+@keyframes frogHop{0%,70%,100%{transform:translate(0,0) rotate(0)}76%{transform:translate(35px,-32px) rotate(12deg)}82%{transform:translate(62px,8px) rotate(0)}90%{transform:translate(0,0)}}
+@keyframes butterflyFly{0%{transform:translate(0,0) rotate(-12deg)}35%{transform:translate(80px,-35px) rotate(10deg)}70%{transform:translate(160px,28px) rotate(-5deg)}100%{transform:translate(240px,-18px) rotate(9deg)}}
+@keyframes leafDrift{from{transform:translateX(0) rotate(0)}to{transform:translateX(112vw) rotate(500deg)}}
+@keyframes mistMove{0%,100%{transform:translateX(-5%);opacity:.35}50%{transform:translateX(5%);opacity:.75}}@keyframes starShimmer{50%{opacity:.55}}
+.expedition-hero{display:grid;grid-template-columns:1.4fr .6fr;gap:16px;padding:18px;border-radius:18px;background:linear-gradient(135deg,#173f59,#287c86);color:white;margin-bottom:16px}.expedition-hero .bigship{font-size:72px;text-align:center}.expedition-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}.exp-stat{padding:12px;border-radius:14px;background:#eefaff;border:1px solid #bee5ee;text-align:center}.exp-stat b{display:block;font-size:20px;color:#15506b}.expedition-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:13px}.exp-card{padding:15px;border:1px solid #c7e6ed;border-radius:17px;background:linear-gradient(#fff,#effbff);box-shadow:0 8px 18px rgba(25,91,110,.08)}.exp-card.done{background:linear-gradient(#f0fff5,#dff8e7);border-color:#9bd7ac}.exp-card.locked{filter:grayscale(.75);opacity:.68}.exp-icon{font-size:42px}.exp-progress{height:9px;background:#d7e9ef;border-radius:99px;overflow:hidden;margin:9px 0}.exp-progress span{display:block;height:100%;background:linear-gradient(90deg,#ffd45b,#ff9d36)}.exp-reward{font-weight:800;color:#a15b00;margin:8px 0}.secret-badge{display:inline-block;background:#7e4bd1;color:white;border-radius:999px;padding:3px 8px;font-size:11px;font-weight:800}.map-node.secret .map-icon{filter:drop-shadow(0 0 8px #d898ff)}
+@media(max-width:700px){.expedition-hero{grid-template-columns:1fr}.expedition-summary{grid-template-columns:repeat(2,1fr)}}
+
+
+/* v2.8.2 — атмосфера и живые рыбаки */
+.seagull,.kingfisher,.fireflies{position:absolute;z-index:8;pointer-events:none;filter:drop-shadow(0 3px 4px rgba(0,0,0,.25))}.seagull{font-size:25px;top:8%;left:-8%;animation:gullFly 18s linear infinite}.seagull.g2{top:14%;animation-duration:27s;animation-delay:-11s}.kingfisher{font-size:22px;right:9%;top:25%;animation:kingDive 9s ease-in-out infinite}.fireflies{left:12%;bottom:18%;font-size:18px;letter-spacing:13px;opacity:0;animation:fireflyBlink 2.4s ease-in-out infinite}.game:has(.sky.night) .fireflies{opacity:.8}.npc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:13px}.npc-card{padding:16px;border-radius:18px;background:linear-gradient(#fff,#eefaff);border:1px solid #bfe1eb;box-shadow:0 8px 18px rgba(20,80,100,.08)}.npc-card.met{background:linear-gradient(#f5fff7,#e3f8e8)}.npc-face{font-size:48px}.dialogue{padding:11px;border-radius:13px;background:#fff9db;border:1px solid #ead995;margin:10px 0;min-height:56px}.ambient-banner{padding:16px;border-radius:18px;background:linear-gradient(135deg,#193e58,#4f7990);color:#fff;margin-bottom:14px}.find-chip{display:inline-block;padding:5px 9px;margin:4px;border-radius:999px;background:#fff3c8;color:#6e4b00;font-weight:800}
+@keyframes gullFly{from{transform:translateX(0) translateY(0)}50%{transform:translateX(58vw) translateY(24px)}to{transform:translateX(116vw) translateY(-8px)}}@keyframes kingDive{0%,60%,100%{transform:translate(0,0) rotate(0)}72%{transform:translate(-90px,95px) rotate(-35deg)}80%{transform:translate(-40px,25px) rotate(20deg)}}@keyframes fireflyBlink{50%{opacity:.2;transform:translateY(-8px)}}
+
+/* v2.8.2 — clean water: remove random dot-like visual noise */
+.surface-sparkles,.plankton,.ambient-bubble{display:none!important}
+
+/* v2.8.2 — окончательное удаление всех точечных декоративных эффектов */
+.surface-sparkles,
+.star-reflections,
+.v19-fireflies,
+.v19-firefly,
+.fireflies,
+.plankton,
+.bubble {
+  display:none !important;
+  opacity:0 !important;
+  animation:none !important;
+  visibility:hidden !important;
+}
+
+
+/* v2.9.1 — visual polish: calm water, subtle boat motion, clean UI */
+.game{box-shadow:0 18px 42px rgba(8,67,94,.20);transition:box-shadow .35s ease,filter .7s ease}
+.sky,.sea{transition:background 2.4s ease,filter 2.4s ease}
+.sea::before,.sea::after{content:"";position:absolute;left:-8%;width:116%;pointer-events:none;border-radius:50%;z-index:4;opacity:.24}
+.sea::before{top:17%;height:54px;border-top:2px solid rgba(255,255,255,.52);animation:v290LongWave 8s ease-in-out infinite alternate}
+.sea::after{top:58%;height:76px;border-top:2px solid rgba(188,239,255,.38);animation:v290LongWave 11s ease-in-out infinite alternate-reverse}
+@keyframes v290LongWave{from{transform:translateX(-18px) scaleY(.86)}to{transform:translateX(18px) translateY(5px) scaleY(1.08)}}
+.boat{animation:v290BoatFloat 5.8s ease-in-out infinite!important;transform-origin:50% 88%!important}
+.fisher{animation:v290FisherFloat 5.8s ease-in-out infinite!important;transform-origin:center bottom!important}
+@keyframes v290BoatFloat{0%,100%{transform:translateY(0) rotate(-.55deg)}50%{transform:translateY(3px) rotate(.55deg)}}
+@keyframes v290FisherFloat{0%,100%{transform:translateY(0) rotate(-.2deg)}50%{transform:translateY(2px) rotate(.25deg)}}
+.life-fish{transition:opacity .45s ease,filter .45s ease}
+.life-fish.resting .sprite{animation-duration:1.35s!important;filter:saturate(.88)}
+.art-fish,.fish,.school{animation-timing-function:linear}
+.panel{animation:v290PanelIn .28s ease both}
+@keyframes v290PanelIn{from{opacity:0;transform:translateY(8px) scale(.992)}to{opacity:1;transform:none}}
+.menu-btn,.primary,.secondary,.shop-item button,.boat-card button{transition:transform .16s ease,box-shadow .16s ease,filter .16s ease}
+.menu-btn:hover,.primary:hover,.secondary:hover,.shop-item button:hover,.boat-card button:hover{transform:translateY(-1px);filter:brightness(1.035)}
+.menu-btn:active,.primary:active,.secondary:active,.shop-item button:active,.boat-card button:active{transform:translateY(1px)}
+.card,.fish-card,.shop-item,.quest-item,.location-card,.boat-card,.npc-card,.lodge-card{transition:transform .2s ease,box-shadow .2s ease}
+.fish-card:hover,.shop-item:hover,.location-card:hover,.boat-card:hover,.npc-card:hover{transform:translateY(-2px);box-shadow:0 9px 22px rgba(8,76,105,.12)}
+.surface-sparkles,.plankton,.ambient-bubble,.v19-fireflies,.v19-firefly{display:none!important}
+@media (prefers-reduced-motion:reduce){.boat,.fisher,.sea::before,.sea::after{animation:none!important}.panel{animation:none!important}}
+
+
+/* v2.10.0 — Living World: rare, calm nature events without screen clutter */
+.wildlife .duck,.wildlife .swan,.wildlife .frog,.wildlife .butterfly,.wildlife .leaf-float,
+.wildlife .seagull,.wildlife .kingfisher{animation:none!important;opacity:0!important;visibility:hidden!important}
+.reed{animation-duration:4.8s!important;animation-timing-function:ease-in-out!important}
+.world-breeze .reed{animation-duration:2.7s!important}
+.world-breeze .sea::before{animation-duration:5.4s!important;opacity:.32}
+.world-breeze .sea::after{animation-duration:7s!important;opacity:.29}
+.living-event{position:absolute;pointer-events:none;z-index:14;will-change:transform,opacity;filter:drop-shadow(0 4px 3px rgba(0,0,0,.14))}
+.living-bird{left:-70px;top:18%;font-size:27px;animation:v210Bird 8.5s ease-in-out forwards}
+.living-dragonfly{right:-45px;top:34%;font-size:18px;animation:v210Dragonfly 7.2s ease-in-out forwards}
+.living-frog{left:7%;bottom:7%;font-size:24px;animation:v210Frog 3.2s ease-in-out forwards}
+.living-butterfly{left:15%;top:18%;font-size:18px;animation:v210Butterfly 8s ease-in-out forwards}
+@keyframes v210Bird{0%{opacity:0;transform:translate(0,18px) scale(.82)}12%{opacity:.92}46%{transform:translate(52vw,-16px) scale(1)}100%{opacity:0;transform:translate(118vw,11px) scale(.86)}}
+@keyframes v210Dragonfly{0%{opacity:0;transform:translate(0,0) rotate(8deg)}12%{opacity:.88}28%{transform:translate(-26vw,-24px) rotate(-9deg)}52%{transform:translate(-55vw,17px) rotate(7deg)}77%{transform:translate(-82vw,-13px) rotate(-6deg)}100%{opacity:0;transform:translate(-116vw,4px)}}
+@keyframes v210Frog{0%,18%{opacity:0;transform:translate(0,0)}25%{opacity:1}46%{transform:translate(22px,-26px) rotate(10deg)}62%{transform:translate(48px,2px)}82%{opacity:1;transform:translate(48px,2px)}100%{opacity:0;transform:translate(48px,8px)}}
+@keyframes v210Butterfly{0%{opacity:0;transform:translate(0,12px) rotate(-8deg)}12%{opacity:.88}34%{transform:translate(24vw,-27px) rotate(10deg)}60%{transform:translate(49vw,18px) rotate(-7deg)}84%{opacity:.85;transform:translate(70vw,-12px) rotate(8deg)}100%{opacity:0;transform:translate(91vw,6px)}}
+@media (prefers-reduced-motion:reduce){.living-event{display:none!important}}
+
+
+/* v2.11.0 — Trophy Signs (steps 1 + 2) */
+.trophy-sign{position:absolute;left:58%;top:205px;width:150px;height:64px;z-index:8;pointer-events:none;opacity:0;transform:translate(-50%,-50%)}
+.trophy-sign.active{opacity:1}
+.trophy-sign .ring{position:absolute;left:50%;top:50%;width:34px;height:13px;border:3px solid rgba(223,249,255,.88);border-radius:50%;transform:translate(-50%,-50%);opacity:0;animation:trophyRing 2.25s ease-out infinite}
+.trophy-sign .ring.r2{animation-delay:.72s}.trophy-sign .ring.r3{animation-delay:1.44s}
+.trophy-sign .deep-shadow{position:absolute;left:12px;top:25px;width:125px;height:25px;border-radius:50%;background:rgba(5,42,63,.4);filter:blur(5px);opacity:.72;animation:trophyShadowBreathe 3.8s ease-in-out infinite}
+.trophy-sign .fin{position:absolute;left:70px;top:15px;width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-bottom:23px solid rgba(25,70,85,.72);transform:rotate(8deg);opacity:0}
+.trophy-sign.splashing .fin{animation:trophyFin 1.25s ease-out}
+.trophy-sign-label{position:absolute;left:50%;top:58px;transform:translateX(-50%);white-space:nowrap;padding:4px 9px;border-radius:999px;background:rgba(8,48,67,.78);color:#effcff;font-size:10px;font-weight:900;letter-spacing:.5px;box-shadow:0 4px 10px rgba(0,0,0,.18);animation:trophyLabel 1.6s ease-in-out infinite alternate}
+.game.trophy-cast-ready #castBtn{box-shadow:0 0 0 3px rgba(255,215,70,.35),0 6px 0 #c66300;animation:trophyCastGlow .9s ease-in-out infinite alternate}
+@keyframes trophyRing{0%{opacity:.92;transform:translate(-50%,-50%) scale(.25)}100%{opacity:0;transform:translate(-50%,-50%) scale(4.2)}}
+@keyframes trophyShadowBreathe{0%,100%{transform:scale(.84);opacity:.45}50%{transform:scale(1.12);opacity:.78}}
+@keyframes trophyFin{0%{opacity:0;transform:translateY(16px) rotate(8deg)}32%{opacity:.85;transform:translateY(-8px) rotate(-5deg)}100%{opacity:0;transform:translateY(8px) rotate(16deg)}}
+@keyframes trophyLabel{from{opacity:.72}to{opacity:1}}
+@keyframes trophyCastGlow{from{filter:brightness(1)}to{filter:brightness(1.12)}}
+@media(max-width:700px){.trophy-sign{top:175px;transform:translate(-50%,-50%) scale(.82)}}
+
+
+/* v3.0.0 — local lake spots */
+.lake-spots-map{position:relative;min-height:540px;border-radius:24px;overflow:hidden;border:2px solid #bfe8ef;background:linear-gradient(#9fdded 0 30%,#5fc3dc 31% 48%,#1f8fb5 49% 100%);box-shadow:inset 0 0 70px rgba(0,63,92,.2)}
+.lake-spots-map:before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 52% 63%,rgba(255,255,255,.22),transparent 36%),repeating-radial-gradient(ellipse at 52% 74%,rgba(255,255,255,.13) 0 2px,transparent 3px 27px);opacity:.8}
+.lake-shore-art{position:absolute;z-index:1;pointer-events:none}.lake-shore-art.left{left:-4%;bottom:-3%;font-size:112px}.lake-shore-art.right{right:-2%;top:7%;font-size:94px}.lake-shore-art.top{left:39%;top:5%;font-size:70px}.lake-spot-node{cursor:pointer;position:absolute;transform:translate(-50%,-50%);width:154px;padding:11px;text-align:center;border-radius:19px;background:rgba(255,255,255,.94);border:2px solid rgba(255,255,255,.96);box-shadow:0 11px 28px rgba(0,60,90,.22);z-index:3;transition:.2s}
+.lake-spot-node:hover{transform:translate(-50%,-54%)}.lake-spot-node.active{outline:4px solid rgba(255,183,3,.78);box-shadow:0 0 0 7px rgba(255,216,90,.18),0 11px 28px rgba(0,60,90,.22)}
+.lake-spot-icon{font-size:40px}.lake-spot-node b{display:block;font-size:15px}.lake-spot-node small{display:block;min-height:32px;opacity:.72;margin:4px 0}.spot-stats{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin:5px 0}.spot-chip{font-size:10px;font-weight:900;padding:4px 6px;border-radius:99px;background:#eaf8fd;color:#15506b}.lake-spot-node button{width:100%;padding:8px;font-size:12px}
+.lake-current{margin:0 0 12px;padding:12px 14px;border-radius:15px;background:linear-gradient(90deg,#eaf9ff,#fff8dc);border:1px solid #c8e8ee;display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.lake-current strong{font-size:17px}.lake-help{font-size:12px;opacity:.72}
+.spot-transition{position:fixed;inset:0;z-index:9998;background:rgba(5,36,55,.72);backdrop-filter:blur(6px);display:none;place-items:center}.spot-transition.show{display:grid}.spot-transition-card{background:white;border-radius:22px;padding:22px 28px;text-align:center;box-shadow:0 18px 55px rgba(0,0,0,.3);animation:spotTravel .7s ease both}.spot-transition-card .big{font-size:64px}@keyframes spotTravel{from{opacity:0;transform:translateY(18px) scale(.92)}to{opacity:1;transform:none}}
+.game.spot-shore .island{filter:none}.game.spot-reeds .island{filter:hue-rotate(20deg) saturate(1.15)}.game.spot-pier .island{filter:sepia(.15)}.game.spot-deep .sea{filter:brightness(.78) saturate(1.15)!important}.game.spot-cove .sea{filter:hue-rotate(12deg) saturate(.88)!important}
+#spotBadge{position:absolute;left:12px;top:110px;z-index:18;padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.88);color:#14546e;font-size:11px;font-weight:900;box-shadow:0 5px 15px rgba(0,60,90,.16);pointer-events:none}
+@media(max-width:700px){.lake-spots-map{min-height:670px}.lake-spot-node{width:126px;padding:8px}.lake-spot-icon{font-size:32px}.lake-spot-node small{font-size:10px}.spot-chip{font-size:9px}#spotBadge{top:100px;left:8px}}
+
+
+
+/* v3.0.6 — visibly different lake scenes */
+#lakeSceneDecor{position:absolute;inset:0;z-index:16;pointer-events:none;overflow:hidden}
+#lakeSceneDecor .scene-label{position:absolute;right:12px;top:10px;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.9);font-weight:900;color:#174f68;box-shadow:0 6px 18px rgba(0,55,80,.18)}
+#lakeSceneDecor .scene-art{position:absolute;inset:0}
+#lakeSceneDecor .scene-art span{position:absolute;filter:drop-shadow(0 5px 5px rgba(0,0,0,.18))}
+.game.spot-shore .sea{background:linear-gradient(#43b7d5 0 18%,#1696bd 42%,#08769f 100%)!important}
+.game.spot-shore #lakeSceneDecor .a1{left:2%;bottom:4%;font-size:78px}.game.spot-shore #lakeSceneDecor .a2{right:3%;bottom:8%;font-size:52px}.game.spot-shore #lakeSceneDecor .a3{left:18%;top:18%;font-size:32px}
+.game.spot-reeds .sea{background:linear-gradient(#65bca7 0 18%,#348e82 45%,#17636a 100%)!important}
+.game.spot-reeds #lakeSceneDecor .scene-art:before,.game.spot-reeds #lakeSceneDecor .scene-art:after{content:'🌾🌾🌾🌾🌾';position:absolute;bottom:0;font-size:54px;letter-spacing:-14px}.game.spot-reeds #lakeSceneDecor .scene-art:before{left:-8px}.game.spot-reeds #lakeSceneDecor .scene-art:after{right:-8px;transform:scaleX(-1)}
+.game.spot-reeds #lakeSceneDecor .a1{left:24%;bottom:12%;font-size:38px}.game.spot-reeds #lakeSceneDecor .a2{right:24%;bottom:24%;font-size:34px}.game.spot-reeds #lakeSceneDecor .a3{left:48%;top:18%;font-size:30px}
+.game.spot-pier .sea{background:linear-gradient(#54b3cc 0 18%,#2586a4 48%,#155f7a 100%)!important}
+.game.spot-pier #lakeSceneDecor .pier{position:absolute;left:-2%;top:7%;width:52%;height:34px;background:repeating-linear-gradient(90deg,#8c5b2f 0 48px,#6c421f 49px 54px);border:5px solid #5d381d;transform:rotate(2deg);box-shadow:0 12px 18px rgba(0,0,0,.25)}
+.game.spot-pier #lakeSceneDecor .pier:before,.game.spot-pier #lakeSceneDecor .pier:after{content:'';position:absolute;top:30px;width:14px;height:160px;background:#5d381d}.game.spot-pier #lakeSceneDecor .pier:before{left:18%}.game.spot-pier #lakeSceneDecor .pier:after{right:18%}
+.game.spot-pier #lakeSceneDecor .a1{left:36%;top:0;font-size:54px}.game.spot-pier #lakeSceneDecor .a2{right:8%;top:20%;font-size:42px}.game.spot-pier #lakeSceneDecor .a3{left:18%;bottom:16%;font-size:32px}
+.game.spot-deep .sea{background:linear-gradient(#217ca6 0 12%,#0a537e 40%,#062d54 72%,#031b39 100%)!important;filter:none!important}
+.game.spot-deep .bottom{opacity:.28}.game.spot-deep .lily,.game.spot-deep .reed-bank{display:none}
+.game.spot-deep #lakeSceneDecor .deep-glow{position:absolute;left:18%;right:18%;bottom:6%;height:45%;background:radial-gradient(ellipse,rgba(38,154,214,.22),transparent 65%);border-radius:50%}
+.game.spot-deep #lakeSceneDecor .a1{left:13%;top:28%;font-size:42px}.game.spot-deep #lakeSceneDecor .a2{right:16%;bottom:20%;font-size:58px;opacity:.7}.game.spot-deep #lakeSceneDecor .a3{left:50%;bottom:9%;font-size:36px}
+.game.spot-cove .sea{background:linear-gradient(#78c8ba 0 16%,#4aa89a 42%,#267b77 100%)!important;filter:none!important}
+.game.spot-cove #lakeSceneDecor .cove-bank{position:absolute;left:-8%;right:-8%;bottom:-32px;height:95px;background:radial-gradient(ellipse at center,#6e9f45 0 48%,#416d2e 49% 68%,transparent 69%)}
+.game.spot-cove #lakeSceneDecor .a1{left:8%;top:18%;font-size:44px}.game.spot-cove #lakeSceneDecor .a2{right:10%;top:28%;font-size:46px}.game.spot-cove #lakeSceneDecor .a3{left:44%;bottom:18%;font-size:38px}.game.spot-cove .surface{opacity:.45}
+
+
+/* v3.2.0 — expanded trophy system */
+.trophy-catch-banner{position:absolute;left:50%;top:18%;transform:translate(-50%,-14px) scale(.94);z-index:160;width:min(430px,88%);padding:15px 18px;border-radius:20px;background:linear-gradient(135deg,rgba(7,43,62,.96),rgba(16,99,104,.96));border:2px solid rgba(255,224,112,.75);box-shadow:0 18px 45px rgba(0,0,0,.38),0 0 28px rgba(255,210,72,.2);color:#fff;text-align:center;opacity:0;pointer-events:none;transition:.3s ease}.trophy-catch-banner.show{opacity:1;transform:translate(-50%,0) scale(1)}.trophy-catch-banner .trophy-title{font-size:13px;letter-spacing:1.4px;text-transform:uppercase;color:#ffe687;font-weight:900}.trophy-catch-banner .trophy-name{font-size:25px;font-weight:1000;margin:3px 0}.trophy-catch-banner .trophy-stats{font-size:17px;font-weight:800}.trophy-catch-banner .trophy-record{margin-top:7px;color:#fff1a8;font-weight:900}.quality-badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:900;margin-left:5px}.quality-common{background:#e8edf0;color:#334}.quality-good{background:#dff7d9;color:#256b28}.quality-rare{background:#dceeff;color:#185f99}.quality-trophy{background:#fff0bc;color:#8b5700}.quality-legendary{background:#ecd8ff;color:#6b20a8;box-shadow:0 0 12px rgba(171,92,255,.45)}
+
+/* v3.3.0 — keepnet inventory */
+.keepnet-summary{display:grid;grid-template-columns:repeat(3,minmax(120px,1fr)) minmax(190px,1.25fr);gap:10px;margin:12px 0}.keepnet-sell{min-height:64px;font-size:16px}.keepnet-row{border-left:4px solid #65c9ae}.keepnet-row.legendary{border-left-color:#bf74ff;box-shadow:inset 0 0 18px rgba(177,90,255,.08)}.keepnet-empty-note{padding:8px 12px;border-radius:12px;background:rgba(60,160,145,.12);font-weight:800;margin-bottom:10px}@media(max-width:760px){.keepnet-summary{grid-template-columns:1fr 1fr}.keepnet-sell{grid-column:1/-1}}
+
+/* v4.0.0 — final living weather system */
+.world-status{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 0 12px}.world-chip{background:rgba(255,255,255,.88);border:1px solid rgba(0,90,130,.18);border-radius:14px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 6px 18px rgba(0,80,120,.08)}.world-chip b{font-size:15px}.world-chip small{display:block;opacity:.72;margin-top:2px}.weather-badge{cursor:pointer;user-select:none}.weather-badge::after{content:' • нажми';font-size:10px;opacity:.7}.game.climate-cloudy .sky{filter:saturate(.82) brightness(.92)}.game.climate-cloudy .cloud{opacity:1;transform:scale(1.2)}.game.climate-rain .sky,.game.climate-rain .sea{filter:saturate(.86) brightness(.84)}.game.climate-rain #rainLayer{display:block!important;opacity:.85}.game.climate-storm .sky,.game.climate-storm .sea{filter:saturate(.72) brightness(.62) contrast(1.08)}.game.climate-storm #rainLayer{display:block!important;opacity:1}.game.climate-storm .cloud{filter:grayscale(1) brightness(.55);font-size:66px}.game.climate-storm .surface{animation-duration:.75s}.game.climate-fog .sky,.game.climate-fog .sea{filter:saturate(.65) brightness(.98)}.game.climate-fog #fogLayer{display:block!important;opacity:.82}.game.climate-clear .surface-sparkles{opacity:1}.weather-tip{position:absolute;right:12px;bottom:12px;z-index:44;background:rgba(5,35,55,.72);color:#fff;border:1px solid rgba(255,255,255,.28);padding:7px 10px;border-radius:12px;font-size:12px;max-width:260px;backdrop-filter:blur(5px)}
+@media(max-width:720px){.world-status{grid-template-columns:1fr}.world-chip{min-height:54px}.weather-tip{font-size:11px;max-width:210px}}
+
+/* Goldfish v1.0 release start screen */
+#startScreen{position:fixed;inset:0;z-index:100000;background:#071b29;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#startScreen.hidden{display:none}
+#startScreen .menu-art{position:relative;height:100%;aspect-ratio:2/3;max-width:100%;background:url("assets/goldfish-menu.png") center/contain no-repeat}
+#startScreen .start-hit{position:absolute;left:23%;width:54%;height:8.5%;border:0;border-radius:28px;background:transparent;cursor:pointer;color:transparent;font-size:0}
+#startScreen .start-hit:focus-visible{outline:5px solid #fff;outline-offset:4px;background:rgba(255,255,255,.12)}
+#startScreen .new-game{top:61.2%}
+#startScreen .continue-game{top:71.2%}
+#startScreen .release-note{position:absolute;left:50%;bottom:1.2%;transform:translateX(-50%);color:rgba(255,255,255,.72);font-size:11px;white-space:nowrap;text-shadow:0 2px 5px #000}
+@media (max-aspect-ratio:2/3){#startScreen .menu-art{width:100%;height:auto}}
+</style>
+</head>
+<body>
+<div id="startScreen" aria-label="Главное меню Goldfish">
+  <div class="menu-art" role="img" aria-label="Озеро, золотая рыбка и главное меню игры Goldfish">
+    <button type="button" class="start-hit new-game" id="startNewGame" aria-label="Новая игра" title="Новая игра">Новая игра</button>
+    <button type="button" class="start-hit continue-game" id="startContinue" aria-label="Продолжить игру" title="Продолжить">Продолжить</button>
+    <div class="release-note">Официальная версия 1.0</div>
+  </div>
+</div>
+
+<div class="wrap">
+  <h1>🐠 Goldfish <small style="font-size:14px;opacity:.65">v4.0.0</small></h1>
+  <p class="subtitle">Живое рыболовное приключение — исследуй шесть водоёмов и собирай расширенную энциклопедию рыб.</p>
+  <div class="stats">
+    <div class="card"><div>Монеты</div><div class="value" id="coins">0</div></div>
+    <div class="card"><div>Забросы</div><div class="value" id="casts">0</div></div>
+    <div class="card"><div>Поймано</div><div class="value" id="caught">0</div></div>
+    <div class="card"><div>Лучший улов</div><div class="value" id="best" style="font-size:18px">Пока нет</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;gap:10px"><b>Уровень рыбака: <span id="level">1</span></b><span id="xpText">0 / 60 опыта</span></div><div class="progress"><span id="xpBar"></span></div></div>
+
+  <div class="world-status">
+    <div class="world-chip"><div><b id="finalTime">☀️ День</b><small>время суток</small></div><span>🕒</span></div>
+    <div class="world-chip"><div><b id="finalClimate">☀️ Ясно</b><small id="finalClimateEffect">Обычный клёв</small></div><span>🌦️</span></div>
+    <div class="world-chip"><div><b id="finalAdvice">Берег</b><small>условия на выбранном месте</small></div><span>🎣</span></div>
+  </div>
+  <div class="game-menu">
+    <button class="menu-btn active" data-panel="none">🌊 Рыбалка</button>
+    <button class="menu-btn" data-panel="careerPanel">🧺 Садок</button>
+    <button class="menu-btn" data-panel="collectionPanel">📖 Коллекция</button>
+    <button class="menu-btn" data-panel="shopPanel">🛒 Магазин</button>
+    <button class="menu-btn" data-panel="questPanel">🏆 Достижения</button>
+    <button class="menu-btn" data-panel="eventPanel">✨ События</button>
+    <button class="menu-btn" data-panel="lakeSpotPanel">🎯 Места озера</button>
+    <button class="menu-btn" data-panel="locationPanel">🗺️ Карта мира</button>
+    <button class="menu-btn" data-panel="boatPanel">🚤 Лодки</button>
+    <button class="menu-btn" data-panel="expeditionPanel">🧭 Экспедиции</button>
+    <button class="menu-btn" data-panel="tournamentPanel">🏅 Турниры</button>
+    <button class="menu-btn" data-panel="hallPanel">🏆 Зал славы</button>
+    <button class="menu-btn" data-panel="lodgePanel">🏡 База</button>
+    <button class="menu-btn" data-panel="npcPanel">👥 Рыбаки</button>
+  </div>
+  <div class="panel" id="careerPanel"><h2>🧺 Садок с уловом</h2>
+    <div class="keepnet-summary">
+      <div class="career-mini">Рыб в садке<b id="keepnetCount">0</b></div>
+      <div class="career-mini">Общий вес<b id="keepnetWeight">0 кг</b></div>
+      <div class="career-mini">Стоимость<b id="keepnetValue">0 🪙</b></div>
+      <button class="primary keepnet-sell" id="sellAllCatch" type="button">💰 Продать весь улов</button>
+    </div>
+    <div class="catch-log" id="keepnetList"><div class="catch-empty">Садок пуст. Пойманная рыба появится здесь.</div></div>
+    <h2 style="margin-top:22px">📜 Журнал улова</h2><div class="career-summary"><div class="career-mini">Всего рыб<b id="careerTotal">0</b></div><div class="career-mini">Общий заработок<b id="careerEarned">0 🪙</b></div><div class="career-mini">Самая тяжёлая<b id="careerHeaviest">—</b></div><div class="career-mini">Самая дорогая<b id="careerValuable">—</b></div></div><div class="catch-log" id="catchLog"></div></div>
+  <div class="panel" id="collectionPanel"><h2>📖 Энциклопедия рыб</h2><div class="collection-grid" id="collectionGrid"></div></div>
+  <div class="panel" id="shopPanel"><h2>🛒 Магазин снастей</h2><div class="shop-grid" id="shopGrid"></div></div>
+  <div class="panel" id="questPanel"><h2>🏆 Достижения рыбака</h2><div class="quest-grid" id="questGrid"></div></div>
+  <div class="panel" id="eventPanel"><h2>✨ Редкие находки и события</h2><div class="career-summary"><div class="career-mini">Всего событий<b id="eventTotal">0</b></div><div class="career-mini">Сокровищ найдено<b id="treasureTotal">0</b></div><div class="career-mini">Лучший бонус<b id="eventBest">—</b></div><div class="career-mini">Коллекция находок<b id="eventKinds">0 / 6</b></div></div><div class="catch-log" id="eventLog"></div></div>
+  <div class="panel" id="lakeSpotPanel">
+    <div class="location-title"><h2>🎯 Места большого озера <small style="font-size:11px;opacity:.65">v4.0.0</small></h2><div class="current-trip" id="lakeSpotTrip">🏖️ Сейчас: Берег</div></div>
+    <div class="lake-current" id="lakeCurrent"></div>
+    <div id="lakeSimpleList" style="position:relative;z-index:9999;pointer-events:auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">
+      <button type="button" id="spotBtn_shore" onclick="selectLakeSpot('shore')" class="secondary" style="min-height:92px;position:relative;z-index:10000;pointer-events:auto;cursor:pointer"><b>🏖️ Берег</b><br><small>Спокойная вода и ровный клёв</small></button>
+      <button type="button" id="spotBtn_reeds" onclick="selectLakeSpot('reeds')" class="primary" style="min-height:92px;position:relative;z-index:10000;pointer-events:auto;cursor:pointer"><b>🌾 Камыши</b><br><small>Чаще клёв и выше шанс трофея</small></button>
+      <button type="button" id="spotBtn_pier" onclick="selectLakeSpot('pier')" class="primary" style="min-height:92px;position:relative;z-index:10000;pointer-events:auto;cursor:pointer"><b>🌉 Пирс</b><br><small>Удобная точка для частых забросов</small></button>
+      <button type="button" id="spotBtn_deep" onclick="selectLakeSpot('deep')" class="primary" style="min-height:92px;position:relative;z-index:10000;pointer-events:auto;cursor:pointer"><b>🌊 Глубина</b><br><small>Реже клёв, но рыба крупнее</small></button>
+      <button type="button" id="spotBtn_cove" onclick="selectLakeSpot('cove')" class="primary" style="min-height:92px;position:relative;z-index:10000;pointer-events:auto;cursor:pointer"><b>🍃 Тихая заводь</b><br><small>Лучший шанс редкого трофея</small></button>
+    </div>
+    <div id="lakeClickStatus" style="margin-top:12px;padding:10px;border-radius:12px;background:#eaf9ff;font-weight:800">Нажми на любое место выше.</div>
+    <div id="lakeSpotFishInfo" style="margin-top:10px;padding:12px;border-radius:14px;background:rgba(10,35,55,.55);line-height:1.55">🏖️ <b>Берег:</b> ровный клёв, серебряная рыбка, окунь и карась.</div>
+  </div>
+  <div class="panel" id="locationPanel"><div class="location-title"><h2>🗺️ Карта мира</h2><div class="current-trip" id="currentTrip">Текущая точка: Тихая бухта</div></div><div class="world-map" id="worldMap"></div></div>
+  <div class="panel" id="boatPanel"><h2>🚤 Флот рыбака</h2><div class="boat-panel-note">Здесь можно покупать и выбирать лодки. Чем выше дальность лодки, тем больше водоёмов доступно на карте мира.</div><div class="boat-grid" id="boatGrid"></div></div>
+  <div class="panel" id="expeditionPanel"><h2>🧭 Экспедиции</h2><div id="expeditionContent"></div></div>
+  <div class="panel" id="tournamentPanel"><h2>🏅 Рыболовные турниры</h2><div id="tournamentContent"></div></div>
+  <div class="panel" id="hallPanel"><h2>🏆 Зал славы</h2><div id="hallContent"></div></div>
+  <div class="panel" id="lodgePanel"><h2>🏡 База рыбака</h2><div id="lodgeContent"></div></div>
+  <div class="panel" id="npcPanel"><h2>👥 Встречи у воды</h2><div id="npcContent"></div></div>
+
+  <div class="game" id="game"><div class="weather-badge" id="weatherBadge">☀️ День • ☀️ Ясно</div><div class="weather-tip" id="weatherTip">Ясно: спокойный клёв и больше обычной рыбы.</div>
+    <div class="sky"><div class="stars"></div><div class="v19-moon">🌙</div><div class="v19-time-label" id="v19TimeLabel">☀️ День</div><div class="atmosphere-layer"><div class="sky-glow"></div><div class="haze-band"></div><div class="far-birds"></div><i class="wind-streak w1"></i><i class="wind-streak w2"></i><i class="wind-streak w3"></i><div class="ambient-bird" id="ambientBird">🕊️</div><div class="ambient-insect" id="ambientInsect">🪰</div></div>
+      <div class="sun">☀️</div><div class="cloud c1">☁️</div><div class="cloud c2">☁️</div><div class="seagull" id="seagull">🕊️</div><div class="dragonfly" id="dragonfly">🪰</div>
+      <div class="island">🏝️</div><div class="boat">🛶</div><div class="fisher">🎣</div><div class="weather-layer rain" id="rainLayer"></div>
+    </div>
+    <div class="sea"><div id="lakeSceneDecor"><div class="scene-label" id="lakeSceneLabel">🏖️ Берег</div><div class="scene-art" id="lakeSceneArt"></div></div><div class="mist-bank"></div><div class="star-reflections"></div><div class="wildlife"><div class="seagull g1">🕊️</div><div class="seagull g2">🦅</div><div class="kingfisher">🐦</div><div class="fireflies">✦ ✧ ✦</div><div class="duck">🦆</div><div class="duck d2">🦆</div><div class="swan">🦢</div><div class="frog">🐸</div><div class="butterfly">🦋</div><div class="butterfly b2">🦋</div><div class="leaf-float">🍂</div><div class="leaf-float lf2">🍃</div></div><div class="trophy-shadow" id="trophyShadow"></div><div class="trophy-sign" id="trophySign" aria-hidden="true"><div class="deep-shadow"></div><div class="ring"></div><div class="ring r2"></div><div class="ring r3"></div><div class="fin"></div><div class="trophy-sign-label">КРУПНАЯ РЫБА</div></div><div class="weather-layer fog" id="fogLayer"></div><div class="weather-layer lightning" id="lightningLayer"></div>
+      <div class="surface"></div><div class="v19-moon-road"></div><div class="sun-path"></div><div class="v19-fireflies" id="v19Fireflies"></div><div class="surface-sparkles"></div><div class="reed-bank"><i class="reed r1"></i><i class="reed r2"></i><i class="reed r3"></i><i class="reed r4"></i><i class="reed r5"></i></div><div class="reed-bank right"><i class="reed r1"></i><i class="reed r2"></i><i class="reed r3"></i><i class="reed r4"></i><i class="reed r5"></i></div><div class="lily l1">🍃</div><div class="lily l2">🍃</div><div class="lily l3">🍃</div><div class="fry-school" id="frySchool1"><span>›</span><span>›</span><span>›</span><span>›</span><span>›</span></div><div class="fry-school fry2" id="frySchool2"><span>›</span><span>›</span><span>›</span><span>›</span></div>
+      <div class="living-ocean" id="livingOcean"><div class="predator-shadow" id="predatorShadow">🦈</div></div><div class="bottle" id="bottle" title="Нажми на бутылку">🍾</div><div class="note-toast" id="noteToast"></div><div class="micro-ripple mr1"></div><div class="micro-ripple mr2"></div><div class="micro-ripple mr3"></div><div class="ray r1"></div><div class="ray r2"></div><div class="ray r3"></div>
+      <div class="art-fish af1"><span class="tail"></span><span class="body"></span><span class="fin"></span><span class="eye"></span></div>
+      <div class="art-fish blue af2"><span class="tail"></span><span class="body"></span><span class="fin"></span><span class="eye"></span></div>
+      <div class="art-fish green af3"><span class="tail"></span><span class="body"></span><span class="fin"></span><span class="eye"></span></div>
+      <div class="fish f3">🐡</div><div class="fish f5">🦈</div>
+      <div class="art-fish goldfish legend-fish" id="legendFish"><span class="tail"></span><span class="body"></span><span class="fin"></span><span class="eye"></span></div>
+      <div class="school s1"><span>🐟</span><span>🐟</span><span>🐟</span><span>🐟</span></div>
+      <div class="school s2"><span>🐠</span><span>🐠</span><span>🐠</span></div>
+      <div class="bubble b1">○</div><div class="bubble b2">○</div><div class="bubble b3">○</div>
+      <div class="cast-arc" id="castArc"></div><div class="line" id="line"></div><div class="bobber" id="bobber"></div><div class="hook" id="hook">🪝</div><div class="bite-fish" id="biteFish">🐟</div><div class="ripple" id="ripple"></div><div class="jump-fish" id="jumpFish">🐟</div><div class="splash" id="splash">💦</div>
+      <div class="result">
+        <div id="fishIcon">🌊</div>
+        <div class="msg" id="message">Нажми «Закинуть удочку»</div>
+        <div class="reward" id="reward">Рыбы уже плавают под лодкой.</div>
+      </div>
+      <div class="bottom"><span>🪨</span><span>🌿</span><span>🪸</span><span>⭐</span><span>🦪</span><span>🌿</span><span>🪨</span></div>
+    </div>
+    <div class="controls">
+      <button class="primary" id="castBtn" type="button">🎣 Закинуть удочку</button>
+      <button class="secondary" id="soundBtn">🔊 Звук включён</button>
+      <button class="secondary" id="resetBtn">Начать заново</button>
+    </div>
+  </div>
+
+  <div class="fight-overlay" id="fightOverlay">
+    <div class="fight-card">
+      <div class="trophy-badge" id="fightBadge">🎣 РЫБА НА КРЮЧКЕ</div>
+      <div class="fight-fish" id="fightFish">🐟</div>
+      <h2 id="fightName">Большая рыба</h2><div class="fight-personality" id="fightPersonality">Спокойная</div>
+      <div class="fight-meters">
+        <div class="vertical-meter-wrap"><span>НАТЯЖЕНИЕ</span><div class="meter vertical"><div id="tensionFill"></div><span class="safe-zone"></span></div></div>
+        <div class="vertical-meter-wrap"><span>К ЛОДКЕ</span><div class="meter vertical"><div id="progressFill" style="height:0%"></div></div></div>
+      <button class="reel-btn" id="reelBtn">🎣 ТЯНУТЬ</button>
+      <div class="fight-tip">Нажимай короткими рывками. Держи натяжение в безопасной зоне: слишком сильное порвёт леску, слишком слабое позволит рыбе сорваться.</div>
+    </div>
+  </div>
+</div>
+<div class="travel-overlay" id="travelOverlay"><div class="travel-sun">☀️</div><div class="travel-cloud">☁️</div><div class="travel-wave"></div><div class="travel-boat" id="travelBoat">🛶</div><div class="travel-card"><b id="travelText">Отправляемся...</b><div id="travelSub">Ветер попутный</div><div class="travel-progress"><span></span></div></div></div>
+<div class="trophy-catch-banner" id="trophyCatchBanner"><div class="trophy-title" id="trophyBannerTitle">НОВЫЙ УЛОВ</div><div class="trophy-name" id="trophyBannerName">Рыба</div><div class="trophy-stats" id="trophyBannerStats"></div><div class="trophy-record" id="trophyBannerRecord"></div></div>
+<div class="toast" id="toast"></div>
+<script>
+const $=id=>document.getElementById(id);
+let state={coins:0,casts:0,caught:0,bestReward:0,best:'Пока нет',sound:true,xp:0,level:1,rod:0,reel:0,lineGear:0,hookGear:0,bait:0,gearLevels:{rod:0,reel:0,lineGear:0,hookGear:0,bait:0},location:'bay',lakeSpot:'shore',boat:0,ownedBoats:[0],collection:{},catchLog:[],totalEarned:0,quests:{},weather:'day',rareEvents:[],eventCollection:{},expeditions:{},expeditionPoints:0,visitedLocations:['bay'],hallOfFame:{},tournaments:{},tournamentWins:0,lodgeLevel:1,lodgeTrophies:[],npcMet:{},npcTalks:0,ambientFinds:[],keepnet:[],soldFish:0};
+
+// v3.2.0 — lake spot selector core installed immediately after game state.
+const lakeSpotDefs={
+ shore:{icon:'🏖️',name:'Берег',desc:'Спокойная вода и ровный клёв.',bite:1.00,trophy:1.00,theme:'shore'},
+ reeds:{icon:'🌾',name:'Камыши',desc:'Рыба прячется у травы.',bite:1.12,trophy:1.18,theme:'reeds'},
+ pier:{icon:'🌉',name:'Пирс',desc:'Удобная точка для частых забросов.',bite:1.20,trophy:.92,theme:'pier'},
+ deep:{icon:'🌊',name:'Глубина',desc:'Клёв реже, зато рыба крупнее.',bite:.86,trophy:1.42,theme:'deep'},
+ cove:{icon:'🍃',name:'Тихая заводь',desc:'Редкое место с хорошим трофейным шансом.',bite:.94,trophy:1.58,theme:'cove'}
+};
+const lakeSpotFishing={
+ shore:{text:'🏖️ <b>Берег:</b> ровный клёв, серебряная рыбка, окунь и карась.',mult:{sprat:1.35,perch:1.20,crucian:1.15,carp:.80,pike:.65,gold:.90}},
+ reeds:{text:'🌾 <b>Камыши:</b> чаще золотой карась и зеркальный карп; щука может атаковать из травы.',mult:{sprat:.75,perch:.95,crucian:1.65,carp:1.75,pike:1.25,gold:1.08}},
+ pier:{text:'🌉 <b>Пирс:</b> быстрый клёв; особенно окунь и небольшая рыба.',mult:{sprat:1.55,perch:1.70,crucian:1.05,carp:.75,pike:.70,gold:.85}},
+ deep:{text:'🌊 <b>Глубина:</b> клёв реже, зато заметно чаще крупная щука и трофейный карп.',mult:{sprat:.42,perch:.70,crucian:.72,carp:1.70,pike:2.25,gold:1.20}},
+ cove:{text:'🍃 <b>Тихая заводь:</b> редкий спокойный клёв, высокий шанс карпа и легендарной золотой рыбки.',mult:{sprat:.55,perch:.75,crucian:1.25,carp:2.00,pike:1.05,gold:1.65}}
+};
+window.selectLakeSpot=function(id){
+ const s=lakeSpotDefs[id]; if(!s)return false;
+ state.lakeSpot=id;
+ const trip=document.getElementById('lakeSpotTrip');if(trip)trip.textContent=s.icon+' Сейчас: '+s.name;
+ const info=document.getElementById('lakeCurrent');if(info)info.innerHTML='<div><strong>'+s.icon+' '+s.name+'</strong><div class="lake-help">'+s.desc+'</div></div><div><b>Клёв ×'+s.bite.toFixed(2)+'</b> &nbsp; • &nbsp; <b>Трофей ×'+s.trophy.toFixed(2)+'</b></div>'; const fishInfo=document.getElementById('lakeSpotFishInfo');if(fishInfo)fishInfo.innerHTML=(lakeSpotFishing[id]||lakeSpotFishing.shore).text;
+ Object.keys(lakeSpotDefs).forEach(k=>{const b=document.getElementById('spotBtn_'+k);if(b)b.className=k===id?'secondary':'primary'});
+ const status=document.getElementById('lakeClickStatus');if(status){status.textContent='✅ Вы выбрали: '+s.icon+' '+s.name+'. Теперь возвращайтесь к рыбалке.';status.style.background='#e7f8e9'}
+ const game=document.getElementById('game');if(game){Object.values(lakeSpotDefs).forEach(x=>game.classList.remove('spot-'+x.theme));game.classList.add('spot-'+s.theme);let badge=document.getElementById('spotBadge');if(!badge){badge=document.createElement('div');badge.id='spotBadge';game.appendChild(badge)}badge.textContent=s.icon+' '+s.name;const label=document.getElementById('lakeSceneLabel');if(label)label.textContent=s.icon+' '+s.name;const art=document.getElementById('lakeSceneArt');if(art){const scenes={shore:'<span class="a1">🏖️</span><span class="a2">🪨</span><span class="a3">🦆</span>',reeds:'<span class="a1">🍃</span><span class="a2">🐸</span><span class="a3">🪰</span>',pier:'<div class="pier"></div><span class="a1">🪵</span><span class="a2">🦆</span><span class="a3">🪢</span>',deep:'<div class="deep-glow"></div><span class="a1">🐟</span><span class="a2">🐋</span><span class="a3">✨</span>',cove:'<div class="cove-bank"></div><span class="a1">🌿</span><span class="a2">🦢</span><span class="a3">🍃</span>'};art.innerHTML=scenes[id]||scenes.shore}}
+ try{if(typeof save==='function')save();else localStorage.setItem('goldfish_v1_state',JSON.stringify(state))}catch(e){}
+ try{if(typeof toast==='function')toast(s.icon+' Новое место: '+s.name)}catch(e){}
+ return false;
+};
+window.renderLakeSpots=function(){return window.selectLakeSpot(state.lakeSpot||'shore')};
+
+let busy=false,ctx=null,bottleActive=false;
+let trophySignActive=false,trophySignCast=false,trophySignTimer=null;
+const fishData=[
+ {id:'sprat',icon:'🐟',name:'Серебряная рыбка',rarity:'Обычная',cls:'',reward:5,xp:5,weight:52,locations:['bay','lake','river'],personality:'calm'},
+ {id:'perch',icon:'🐠',name:'Солнечный окунь',rarity:'Обычная',cls:'',reward:9,xp:7,weight:25,locations:['bay','lake','river'],personality:'fast'},
+ {id:'crucian',icon:'🐟',name:'Золотой карась',rarity:'Обычная',cls:'',reward:12,xp:8,weight:22,locations:['lake','river'],personality:'calm'},
+ {id:'trout',icon:'🐟',name:'Радужная форель',rarity:'Необычная',cls:'rare',reward:26,xp:15,weight:12,locations:['river','lake'],personality:'fast'},
+ {id:'puffer',icon:'🐡',name:'Рыба-шар',rarity:'Редкая',cls:'rare',reward:22,xp:14,weight:10,locations:['bay','reef','wreck','volcano'],personality:'tricky'},
+ {id:'carp',icon:'🎏',name:'Зеркальный карп',rarity:'Редкая',cls:'rare',reward:30,xp:18,weight:8,locations:['lake'],trophy:true,power:1.0,personality:'strong'},
+ {id:'pike',icon:'🐊',name:'Северная щука',rarity:'Редкая',cls:'rare',reward:48,xp:24,weight:7,locations:['lake','river'],trophy:true,power:1.15,personality:'aggressive'},
+ {id:'salmon',icon:'🐟',name:'Королевский лосось',rarity:'Очень редкая',cls:'rare',reward:85,xp:32,weight:4,locations:['river'],trophy:true,power:1.3,personality:'strong'},
+ {id:'tuna',icon:'🐟',name:'Синий тунец',rarity:'Очень редкая',cls:'rare',reward:120,xp:38,weight:3,locations:['reef','wreck'],trophy:true,power:1.45,personality:'fast'},
+ {id:'shark',icon:'🦈',name:'Молодая акула',rarity:'Очень редкая',cls:'rare',reward:110,xp:35,weight:3,locations:['bay','reef'],trophy:true,power:1.35,personality:'aggressive'},
+ {id:'ray',icon:'🛸',name:'Глубинный скат',rarity:'Очень редкая',cls:'rare',reward:145,xp:42,weight:2,locations:['reef','wreck','volcano'],trophy:true,power:1.55,personality:'deep'},
+ {id:'sturgeon',icon:'🐉',name:'Древний осётр',rarity:'Эпическая',cls:'rare',reward:260,xp:65,weight:1.6,locations:['wreck','volcano'],trophy:true,power:1.7,personality:'deep'},
+ {id:'lavaeel',icon:'🔥',name:'Огненный угорь',rarity:'Эпическая',cls:'rare',reward:340,xp:78,weight:1.2,locations:['volcano'],trophy:true,power:1.78,personality:'tricky'},
+ {id:'mooncarp',icon:'🌙🐟',name:'Лунный карп',rarity:'Экспедиционная',cls:'rare',reward:210,xp:52,weight:1.5,locations:['moonlagoon'],trophy:true,power:1.5,personality:'tricky'},
+ {id:'icepike',icon:'❄️🐟',name:'Ледяная щука',rarity:'Экспедиционная',cls:'rare',reward:280,xp:64,weight:1.2,locations:['frostfjord'],trophy:true,power:1.68,personality:'aggressive'},
+ {id:'abyssal',icon:'🔮🐠',name:'Светящийся глубинник',rarity:'Эпическая',cls:'rare',reward:430,xp:92,weight:.8,locations:['abyss'],trophy:true,power:1.85,personality:'deep'},
+ {id:'gold',icon:'👑🐠',name:'Золотая рыбка',rarity:'Легендарная',cls:'legendary',reward:1000,xp:150,weight:.7,locations:['bay','lake','river','reef','wreck','volcano'],trophy:true,power:1.8,personality:'legendary'}
+];
+const fishPersonalities={
+ calm:{name:'😌 Спокойная',speed:.72,chaos:.55,drain:.82,reel:1.14,attack:0},
+ fast:{name:'⚡ Быстрая',speed:1.35,chaos:1.25,drain:1.02,reel:.96,attack:.025},
+ tricky:{name:'🌀 Хитрая',speed:1.0,chaos:1.45,drain:1.35,reel:.91,attack:.018},
+ strong:{name:'💪 Сильная',speed:.86,chaos:.82,drain:.92,reel:.72,attack:.032},
+ aggressive:{name:'🦈 Агрессивная',speed:1.2,chaos:1.15,drain:1.02,reel:.62,attack:.055},
+ deep:{name:'🌊 Глубинная',speed:.78,chaos:.72,drain:1.55,reel:.58,attack:.038},
+ legendary:{name:'✨ Легендарная',speed:1.28,chaos:1.5,drain:1.22,reel:.48,attack:.07}
+};
+const rods=[
+ {name:'Старая удочка',cost:0,bonus:0,desc:'Простая стартовая снасть.'},
+ {name:'Крепкая удочка',cost:120,bonus:1.2,desc:'Стабильнее держит натяжение.'},
+ {name:'Морская удочка',cost:420,bonus:2.4,desc:'Лучше справляется с трофейной рыбой.'},
+ {name:'Золотая удочка',cost:1200,bonus:4,desc:'Максимальная сила и шанс редкого улова.'}
+];
+const reels=[
+ {name:'Старая катушка',cost:0,reel:0,desc:'Медленное подтягивание.'},
+ {name:'Плавная катушка',cost:140,reel:.55,desc:'Быстрее подводит рыбу к лодке.'},
+ {name:'Силовая катушка',cost:460,reel:1.25,desc:'Сильные короткие рывки.'},
+ {name:'Турнирная катушка',cost:1350,reel:2.1,desc:'Лучший контроль тяжёлого улова.'}
+];
+const lines=[
+ {name:'Обычная леска',cost:0,safe:0,desc:'Стандартный запас прочности.'},
+ {name:'Плетёная леска',cost:110,safe:3,desc:'Расширяет безопасную зону натяжения.'},
+ {name:'Морская леска',cost:380,safe:7,desc:'Заметно снижает риск обрыва.'},
+ {name:'Титановая леска',cost:1100,safe:11,desc:'Для самой сильной и редкой рыбы.'}
+];
+const hooks=[
+ {name:'Маленький крючок',cost:0,rare:0,desc:'Подходит для обычной рыбы.'},
+ {name:'Острый крючок',cost:90,rare:.55,desc:'Рыба реже срывается при поклёвке.'},
+ {name:'Трофейный крючок',cost:320,rare:1.25,desc:'Повышает шанс крупного улова.'},
+ {name:'Золотой крючок',cost:950,rare:2.1,desc:'Лучший шанс на легендарную рыбу.'}
+];
+const baits=[
+ {name:'Хлебный мякиш',cost:0,bonus:0,desc:'Бесплатная простая приманка.'},
+ {name:'Черви',cost:80,bonus:1,desc:'Привлекает более интересную рыбу.'},
+ {name:'Креветка',cost:260,bonus:2,desc:'Хороша для морских редких видов.'},
+ {name:'Сияющая приманка',cost:800,bonus:3.5,desc:'Манит самых необычных обитателей.'}
+];
+
+const boats=[
+ {id:0,icon:'🛶',name:'Деревянная лодка',price:0,range:1,speed:'Медленная',desc:'Надёжная стартовая лодка для бухты и озера.'},
+ {id:1,icon:'🚤',name:'Моторная лодка',price:450,range:2,speed:'Быстрая',desc:'Открывает реку и короткие морские маршруты.'},
+ {id:2,icon:'🛥️',name:'Морской катер',price:1200,range:3,speed:'Очень быстрая',desc:'Позволяет выйти к коралловому рифу.'},
+ {id:3,icon:'🚢',name:'Рыболовное судно',price:3200,range:5,speed:'Экспедиционная',desc:'Для дальних и опасных районов океана.'}
+];
+const worldLocations=[
+ {id:'bay',icon:'🏖️',name:'Тихая бухта',desc:'Стартовая зона',unlock:1,range:1,x:16,y:69},
+ {id:'lake',icon:'🏞️',name:'Лесное озеро',desc:'Карпы и спокойная вода',unlock:2,range:1,x:27,y:28},
+ {id:'river',icon:'🏕️',name:'Быстрая река',desc:'Сильное течение',unlock:3,range:2,x:48,y:53},
+ {id:'reef',icon:'🪸',name:'Коралловый риф',desc:'Редкие морские рыбы',unlock:5,range:3,x:70,y:26},
+ {id:'wreck',icon:'🚢',name:'Затонувший корабль',desc:'Тайники и трофеи',unlock:8,range:4,x:82,y:66},
+ {id:'volcano',icon:'🌋',name:'Вулканическая бухта',desc:'Опасные воды',unlock:12,range:5,x:57,y:84},
+ {id:'moonlagoon',icon:'🌙',name:'Лунная лагуна',desc:'Секретная ночная вода',unlock:7,range:3,x:89,y:36,secret:true},
+ {id:'frostfjord',icon:'❄️',name:'Ледяной фьорд',desc:'Холодная экспедиция',unlock:10,range:4,x:34,y:8,secret:true},
+ {id:'abyss',icon:'🌀',name:'Бездна фонарей',desc:'Самая дальняя глубина',unlock:14,range:5,x:91,y:86,secret:true}
+];
+function boatData(){return boats.find(b=>b.id===state.boat)||boats[0]}
+function ensureBoatState(){if(!Array.isArray(state.ownedBoats))state.ownedBoats=[0];if(!state.ownedBoats.includes(0))state.ownedBoats.unshift(0);if(typeof state.boat!=='number')state.boat=0}
+function renderBoats(){ensureBoatState();$('boatGrid').innerHTML=boats.map(b=>{const owned=state.ownedBoats.includes(b.id),active=state.boat===b.id;return `<div class="boat-card ${active?'active':''}"><div class="boat-icon">${b.icon}</div><h3>${b.name}</h3><div class="boat-stats">⚡ Скорость: <b>${b.speed}</b><br>🧭 Дальность: <b>${b.range}</b><br>${b.desc}</div><div class="boat-price">${owned?'Куплена':b.price+' монет'}</div><button class="${owned?'secondary':'primary'}" data-boat="${b.id}">${active?'Выбрана':owned?'Выбрать':'Купить'}</button></div>`}).join('');document.querySelectorAll('[data-boat]').forEach(btn=>btn.onclick=()=>selectBoat(+btn.dataset.boat))}
+function selectBoat(id){const b=boats.find(x=>x.id===id);if(!b)return;if(!state.ownedBoats.includes(id)){if(state.coins<b.price){toast('Не хватает монет: нужно '+b.price);return}state.coins-=b.price;state.ownedBoats.push(id);toast('Куплена лодка: '+b.name)}state.boat=id;document.querySelector('.boat').textContent=b.icon;renderBoats();renderWorldMap();update();save()}
+function renderWorldMap(){ensureBoatState();const b=boatData(),map=$('worldMap');if(!map)return;const routes=[[0,1],[0,2],[2,3],[3,4],[2,5],[3,6],[1,7],[4,8]];let html='<div class="map-land one"></div><div class="map-land two"></div><div class="map-land three"></div><div class="map-mountain" style="left:16%;top:16%">⛰️</div><div class="map-mountain" style="right:14%;top:19%">🏔️</div><div class="map-label" style="left:8%;top:48%">Зелёный берег</div><div class="map-label" style="right:7%;top:48%">Дальний океан</div><div class="map-compass">🧭</div>';html+=routes.map(([a,c])=>{const A=worldLocations[a],C=worldLocations[c],dx=C.x-A.x,dy=C.y-A.y,len=Math.hypot(dx,dy),ang=Math.atan2(dy,dx)*180/Math.PI;return `<div class="map-route" style="left:${A.x}%;top:${A.y}%;width:${len}%;transform:rotate(${ang}deg)"></div>`}).join('');html+=worldLocations.map(l=>{const levelOK=state.level>=l.unlock,rangeOK=b.range>=l.range,open=levelOK&&rangeOK,active=state.location===l.id;let reason=!levelOK?'Уровень '+l.unlock:!rangeOK?'Нужна лодка дальности '+l.range:'';return `<div class="map-node ${active?'active':''} ${open?'':'locked'} ${l.secret?'secret':''}" style="left:${l.x}%;top:${l.y}%"><div class="map-icon">${l.icon}</div><b>${l.name}</b><small>${l.desc}</small><button class="${open?'primary':'secondary'}" data-worldloc="${l.id}">${active?'Ты здесь':open?'Плыть':reason}</button></div>`}).join('');map.innerHTML=html;map.querySelectorAll('[data-worldloc]').forEach(btn=>btn.onclick=()=>travelTo(btn.dataset.worldloc));const cur=worldLocations.find(l=>l.id===state.location)||worldLocations[0];$('currentTrip').textContent=`${boatData().icon} ${boatData().name} • Сейчас: ${cur.name}`}
+function travelTo(id){const l=worldLocations.find(x=>x.id===id),b=boatData();if(!l||state.location===id)return;if(state.level<l.unlock){toast('Нужен уровень '+l.unlock);return}if(b.range<l.range){toast('Эта лодка не доплывёт. Нужна дальность '+l.range);return}const overlay=$('travelOverlay');$('travelBoat').textContent=b.icon;$('travelText').textContent='Курс на '+l.name;$('travelSub').textContent=b.name+' выходит в путь';overlay.classList.add('show');setTimeout(()=>{state.location=id;if(!state.visitedLocations.includes(id))state.visitedLocations.push(id);applyLocation();renderWorldMap();renderExpeditions();update();save()},1400);setTimeout(()=>{overlay.classList.remove('show');toast(l.icon+' Прибыли: '+l.name)},2750)}
+
+const locations=[
+ {id:'bay',name:'Солнечная бухта',icon:'🏝️',unlock:1,desc:'Спокойная вода и знакомые рыбы.'},
+ {id:'lake',name:'Тихое озеро',icon:'🏞️',unlock:3,desc:'Карпы и редкие пресноводные виды.'},
+ {id:'reef',name:'Коралловый риф',icon:'🪸',unlock:5,desc:'Редкие морские обитатели и большие награды.'}
+];
+const questDefs=[
+ {id:'q1',title:'Первый улов',text:'Поймай 1 рыбу',reward:20,test:s=>s.caught>=1},
+ {id:'q2',title:'Уверенный рыбак',text:'Поймай 10 рыб',reward:80,test:s=>s.caught>=10},
+ {id:'q25',title:'Опытный рыбак',text:'Поймай 25 рыб',reward:180,test:s=>s.caught>=25},
+ {id:'q100',title:'Хозяин водоёмов',text:'Поймай 100 рыб',reward:650,test:s=>s.caught>=100},
+ {id:'q3',title:'Начинающий коллекционер',text:'Открой 4 вида рыб',reward:150,test:s=>Object.keys(s.collection||{}).length>=4},
+ {id:'q8',title:'Знаток рыб',text:'Открой 8 видов рыб',reward:350,test:s=>Object.keys(s.collection||{}).length>=8},
+ {id:'qall',title:'Полная энциклопедия',text:'Открой все 14 видов рыб',reward:1500,test:s=>Object.keys(s.collection||{}).length>=fishData.length},
+ {id:'q4',title:'Состоятельный рыбак',text:'Накопи 500 монет',reward:200,test:s=>s.coins>=500},
+ {id:'qrich',title:'Рыбацкий магнат',text:'Заработай всего 5000 монет',reward:800,test:s=>(s.totalEarned||0)>=5000},
+ {id:'qt',title:'Охотник за трофеями',text:'Поймай крупную трофейную рыбу',reward:250,test:s=>!!((s.collection||{}).carp||(s.collection||{}).shark||(s.collection||{}).ray||(s.collection||{}).gold)},
+ {id:'qheavy',title:'Настоящий гигант',text:'Поймай рыбу тяжелее 25 кг',reward:500,test:s=>(s.catchLog||[]).some(x=>x.kg>=25)},
+ {id:'qexplore',title:'Путешественник',text:'Доберись до Вулканической бухты',reward:450,test:s=>s.location==='volcano'},
+ {id:'qevent',title:'Искатель чудес',text:'Найди 3 разных редких события',reward:300,test:s=>Object.keys(s.eventCollection||{}).length>=3},
+ {id:'q5',title:'Легенда моря',text:'Поймай Золотую рыбку',reward:1000,test:s=>!!(s.collection||{}).gold}
+];
+const rareEventDefs=[
+ {id:'boot',icon:'🥾',name:'Старый сапог',text:'На крючке оказался старый морской сапог.',min:4,max:12},
+ {id:'bottle',icon:'🍾',name:'Бутылка с запиской',text:'В записке была подсказка о хорошем месте.',min:18,max:45},
+ {id:'chest',icon:'🧰',name:'Сундук с монетами',text:'Небольшой сундук поднялся со дна.',min:70,max:160},
+ {id:'pearl',icon:'🦪',name:'Редкая жемчужина',text:'В раковине блеснула ценная жемчужина.',min:120,max:260},
+ {id:'map',icon:'🗺️',name:'Карта сокровищ',text:'Старая карта привела к спрятанному кладу.',min:220,max:420},
+ {id:'crown',icon:'👑',name:'Корона морского короля',text:'Невероятно редкая реликвия из глубины.',min:650,max:1100}
+];
+
+const legendaryFish=[
+ {id:'leviathan',icon:'🐉',name:'Левиафан глубин',rarity:'Мифическая',cls:'legendary',reward:2400,xp:320,weight:.07,locations:['abyss'],trophy:true,power:2.65,personality:'deep'},
+ {id:'mooncarp',icon:'🌙🐟',name:'Лунный карп',rarity:'Легендарная',cls:'legendary',reward:1600,xp:240,weight:.10,locations:['moon'],trophy:true,power:2.25,personality:'tricky'},
+ {id:'iceking',icon:'❄️🐠',name:'Ледяной король',rarity:'Легендарная',cls:'legendary',reward:1900,xp:270,weight:.09,locations:['fjord'],trophy:true,power:2.4,personality:'strong'}
+];
+legendaryFish.forEach(f=>{if(!fishData.some(x=>x.id===f.id))fishData.push(f)});
+const legendaryRanges={leviathan:[48,118],mooncarp:[9,27],iceking:[22,64]};
+const tournamentDefs=[
+ {id:'daily_weight',icon:'⚖️',title:'Кубок тяжеловеса',text:'Поймай сегодня рыбу тяжелее 8 кг',goal:8,type:'weight',reward:450},
+ {id:'daily_catches',icon:'🎣',title:'Марафон улова',text:'Поймай 7 рыб в текущем турнире',goal:7,type:'count',reward:320},
+ {id:'daily_value',icon:'🪙',title:'Золотая сеть',text:'Заработай уловом 700 монет',goal:700,type:'value',reward:600}
+];
+function tournamentDay(){return new Date().toISOString().slice(0,10)}
+function ensureTournament(){state.tournaments=state.tournaments&&typeof state.tournaments==='object'?state.tournaments:{};const day=tournamentDay();if(state.tournaments.day!==day)state.tournaments={day,count:0,value:0,bestWeight:0,claimed:{}};state.tournaments.claimed=state.tournaments.claimed||{}}
+function tournamentProgress(t){ensureTournament();return t.type==='count'?state.tournaments.count:t.type==='value'?state.tournaments.value:state.tournaments.bestWeight}
+function recordTournament(rec){ensureTournament();state.tournaments.count++;state.tournaments.value+=Number(rec.value)||0;state.tournaments.bestWeight=Math.max(state.tournaments.bestWeight||0,Number(rec.kg)||0)}
+function claimTournament(id){ensureTournament();const t=tournamentDefs.find(x=>x.id===id);if(!t||state.tournaments.claimed[id]||tournamentProgress(t)<t.goal)return;state.tournaments.claimed[id]=true;state.coins+=t.reward;state.tournamentWins=(Number(state.tournamentWins)||0)+1;toast('🏅 Турнир завершён! +'+t.reward+' монет');update()}
+function renderTournaments(){ensureTournament();const root=$('tournamentContent');if(!root)return;const done=tournamentDefs.filter(t=>state.tournaments.claimed[t.id]).length;root.innerHTML=`<div class="tournament-hero"><h3>Ежедневная серия • ${state.tournaments.day}</h3><p>Результаты обновляются после каждого успешного улова. Все три кубка обновятся завтра.</p><b>Кубков сегодня: ${done}/${tournamentDefs.length} • Всего побед: ${state.tournamentWins||0}</b></div><div class="tournament-grid">${tournamentDefs.map(t=>{const p=tournamentProgress(t),ready=p>=t.goal,claimed=!!state.tournaments.claimed[t.id],pct=Math.min(100,p/t.goal*100);return `<div class="tournament-card"><div class="podium">${t.icon}</div><h3>${t.title}</h3><p>${t.text}</p><div class="tournament-progress"><span style="width:${pct}%"></span></div><b>${t.type==='weight'?p.toFixed(2):Math.floor(p)} / ${t.goal}${t.type==='weight'?' кг':''}</b><p>Награда: ${t.reward} 🪙</p><button class="${ready&&!claimed?'primary':'secondary'}" data-tclaim="${t.id}" ${!ready||claimed?'disabled':''}>${claimed?'Получено':ready?'Забрать кубок':'Соревнуемся'}</button></div>`}).join('')}</div>`;root.querySelectorAll('[data-tclaim]').forEach(b=>b.onclick=()=>claimTournament(b.dataset.tclaim))}
+function updateHall(rec){state.hallOfFame=state.hallOfFame&&typeof state.hallOfFame==='object'?state.hallOfFame:{};const old=state.hallOfFame[rec.id];if(!old||rec.kg>old.kg)state.hallOfFame[rec.id]={...rec};if((rec.rarity==='Легендарная'||rec.rarity==='Мифическая')&&!state.lodgeTrophies.includes(rec.id))state.lodgeTrophies.push(rec.id)}
+function renderHall(){const root=$('hallContent');if(!root)return;const records=Object.values(state.hallOfFame||{}).sort((a,b)=>b.kg-a.kg);root.innerHTML=records.length?`<div class="career-summary"><div class="career-mini">Рекордов<b>${records.length}</b></div><div class="career-mini">Легендарных<b>${records.filter(r=>r.rarity==='Легендарная'||r.rarity==='Мифическая').length}</b></div><div class="career-mini">Самый тяжёлый<b>${records[0].kg} кг</b></div><div class="career-mini">Рекордная цена<b>${Math.max(...records.map(r=>r.value))} 🪙</b></div></div><div class="hall-grid">${records.map(r=>`<div class="hall-card ${(r.rarity==='Легендарная'||r.rarity==='Мифическая')?'legend':''}"><div class="hall-icon">${r.icon}</div><h3>${r.name}</h3><div class="record-line"><span>Вес</span><b>${r.kg} кг</b></div><div class="record-line"><span>Стоимость</span><b>${r.value} 🪙</b></div><div class="record-line"><span>Качество</span><b>${r.qualityIcon||""} ${r.quality||r.rarity}</b></div><div class="record-line"><span>Вид</span><b>${r.rarity}</b></div><div class="record-line"><span>Дата</span><b>${new Date(r.at).toLocaleDateString('ru-RU')}</b></div></div>`).join('')}</div>`:'<div class="catch-empty">Зал славы ждёт твоего первого рекорда. Лучшая рыба каждого вида появится здесь.</div>'}
+function lodgeUpgradeCost(){return 500*Math.max(1,state.lodgeLevel||1)}
+function upgradeLodge(){const c=lodgeUpgradeCost();if(state.coins<c){toast('Для улучшения базы нужно '+c+' монет');return}state.coins-=c;state.lodgeLevel=Math.min(5,(state.lodgeLevel||1)+1);toast('🏡 База улучшена до уровня '+state.lodgeLevel);update()}
+function renderLodge(){const root=$('lodgeContent');if(!root)return;const lvl=state.lodgeLevel||1,trophies=(state.lodgeTrophies||[]).map(id=>fishData.find(f=>f.id===id)).filter(Boolean);root.innerHTML=`<div class="lodge-hero"><div><h3>Дом рыбака • уровень ${lvl}/5</h3><p>${['Небольшой причал и деревянная хижина.','Уютная база с мастерской снастей.','Настоящий рыбацкий дом с трофейной стеной.','Капитанская усадьба с большим складом.','Легендарная резиденция покорителя морей.'][lvl-1]}</p></div><div class="lodge-level">${['🛖','🏠','🏡','🏘️','🏰'][lvl-1]}</div></div><div class="lodge-grid"><div class="lodge-card"><h3>🦌 Трофейная стена</h3><div class="trophy-wall">${trophies.length?trophies.map(f=>`<span title="${f.name}">${f.icon}</span>`).join(''):'<small>Легендарные трофеи появятся здесь.</small>'}</div></div><div class="lodge-card"><h3>📊 Карьера</h3><p>Поймано: <b>${state.caught}</b></p><p>Побед в турнирах: <b>${state.tournamentWins||0}</b></p><p>Очков экспедиций: <b>${state.expeditionPoints||0}</b></p></div><div class="lodge-card"><h3>🔨 Улучшение базы</h3><p>Каждый уровень делает базу красивее и показывает твой прогресс.</p><button class="primary" id="lodgeUpgrade" ${lvl>=5?'disabled':''}>${lvl>=5?'Максимальный уровень':'Улучшить за '+lodgeUpgradeCost()+' 🪙'}</button></div></div>`;const b=$('lodgeUpgrade');if(b)b.onclick=upgradeLodge}
+
+function save(){localStorage.setItem('goldfish_v1_state',JSON.stringify(state))}
+function load(){try{const x=JSON.parse(localStorage.getItem('goldfish_v1_state'));if(x)state={...state,...x}}catch(e){}; state.rod=Math.max(0,Math.min(rods.length-1,Number(state.rod)||0)); state.reel=Math.max(0,Math.min(reels.length-1,Number(state.reel)||0)); state.lineGear=Math.max(0,Math.min(lines.length-1,Number(state.lineGear)||0)); state.hookGear=Math.max(0,Math.min(hooks.length-1,Number(state.hookGear)||0)); state.bait=Math.max(0,Math.min(baits.length-1,Number(state.bait)||0)); if(!worldLocations.some(l=>l.id===state.location))state.location='bay'; if(!Array.isArray(state.catchLog))state.catchLog=[]; state.totalEarned=Number(state.totalEarned)||0; if(!state.gearLevels||typeof state.gearLevels!=='object')state.gearLevels={}; if(!Array.isArray(state.rareEvents))state.rareEvents=[]; if(!state.eventCollection||typeof state.eventCollection!=='object')state.eventCollection={}; if(!state.expeditions||typeof state.expeditions!=='object')state.expeditions={}; state.expeditionPoints=Number(state.expeditionPoints)||0; if(!Array.isArray(state.visitedLocations))state.visitedLocations=['bay']; if(!state.hallOfFame||typeof state.hallOfFame!=='object')state.hallOfFame={}; if(!state.tournaments||typeof state.tournaments!=='object')state.tournaments={}; state.tournamentWins=Number(state.tournamentWins)||0; state.lodgeLevel=Math.max(1,Math.min(5,Number(state.lodgeLevel)||1)); if(!Array.isArray(state.lodgeTrophies))state.lodgeTrophies=[]; if(!Array.isArray(state.keepnet))state.keepnet=[]; state.soldFish=Number(state.soldFish)||0; ensureTournament(); ['rod','reel','lineGear','hookGear','bait'].forEach(k=>state.gearLevels[k]=Math.max(0,Math.min(5,Number(state.gearLevels[k])||0)));}
+function audio(){try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return null;if(!ctx)ctx=new AC();return ctx}catch(e){console.warn('Audio unavailable',e);return null}}
+function tone(f,d=.15,t='sine',v=.05,delay=0){try{if(!state.sound)return;const c=audio();if(!c)return;const o=c.createOscillator(),g=c.createGain(),s=c.currentTime+delay;o.type=t;o.frequency.setValueAtTime(f,s);g.gain.setValueAtTime(.0001,s);g.gain.exponentialRampToValueAtTime(v,s+.02);g.gain.exponentialRampToValueAtTime(.0001,s+d);o.connect(g);g.connect(c.destination);o.start(s);o.stop(s+d+.03)}catch(e){console.warn('Sound skipped',e)}}
+function toast(t){const e=$('toast');e.textContent=t;e.classList.remove('show');void e.offsetWidth;e.classList.add('show')}
+function splash(){const e=$('splash');e.classList.remove('show');void e.offsetWidth;e.classList.add('show');const r=$('ripple');r.style.left=(46+Math.random()*8)+'%';r.classList.remove('play');void r.offsetWidth;r.classList.add('play')}
+function update(){
+ $('coins').textContent=state.coins;$('casts').textContent=state.casts;$('caught').textContent=state.caught;$('best').textContent=state.best;$('level').textContent=state.level;
+ const need=state.level*60;$('xpText').textContent=state.xp+' / '+need+' опыта';$('xpBar').style.width=Math.min(100,state.xp/need*100)+'%';
+ $('soundBtn').textContent=state.sound?'🔊 Звук включён':'🔇 Звук выключен';renderAll();save();
+}
+function gainXp(n){state.xp+=n;while(state.xp>=state.level*60){state.xp-=state.level*60;state.level++;state.coins+=50;toast('🎉 Новый уровень '+state.level+'! Бонус: 50 монет');tone(620,.15,'triangle',.06);tone(880,.25,'triangle',.07,.15)}}
+function fishWeightRange(f){
+ const ranges={sprat:[.12,.42],perch:[.3,1.25],crucian:[.45,2.5],trout:[.7,5.8],puffer:[.55,2.1],carp:[2.2,15],pike:[1.2,20],salmon:[3.5,18],tuna:[12,95],shark:[8,38],ray:[12,62],sturgeon:[18,120],lavaeel:[4,28],gold:[1.8,6.5],...legendaryRanges};
+ return ranges[f.id]||[.2,3];
+}
+function fishWeightKg(f){
+ const r=fishWeightRange(f),spot=state.lakeSpot||'shore',spotMult=state.location==='lake'?({shore:1,reeds:1.04,pier:.98,deep:1.16,cove:1.1}[spot]||1):1;
+ const gearMult=1+gearLevel('hookGear')*.012+gearLevel('rod')*.008;
+ let roll=Math.pow(Math.random(),.72); // крупные экземпляры редки, но достижимы
+ return Math.round(Math.min(r[1]*1.04,(r[0]+roll*(r[1]-r[0]))*spotMult*gearMult)*100)/100;
+}
+function catchQuality(f,kg){
+ const r=fishWeightRange(f),ratio=Math.max(0,Math.min(1,(kg-r[0])/Math.max(.01,r[1]-r[0])));
+ if(f.id==='gold'||ratio>=.94)return {id:'legendary',name:'Легендарная',icon:'👑',mult:2.15,xp:2.0};
+ if(ratio>=.82)return {id:'trophy',name:'Трофейная',icon:'🏆',mult:1.65,xp:1.55};
+ if(ratio>=.62)return {id:'rare',name:'Редкая',icon:'💎',mult:1.32,xp:1.3};
+ if(ratio>=.34)return {id:'good',name:'Хорошая',icon:'⭐',mult:1.12,xp:1.12};
+ return {id:'common',name:'Обычная',icon:'🐟',mult:1,xp:1};
+}
+function showTrophyCatch(rec,isRecord){
+ const b=$('trophyCatchBanner');if(!b)return;
+ $('trophyBannerTitle').textContent=(rec.qualityId==='legendary'?'ЛЕГЕНДАРНЫЙ УЛОВ':rec.qualityId==='trophy'?'ТРОФЕЙНЫЙ УЛОВ':'НОВЫЙ УЛОВ');
+ $('trophyBannerName').textContent=rec.icon+' '+rec.name;
+ $('trophyBannerStats').innerHTML=rec.kg+' кг • '+rec.qualityIcon+' '+rec.quality+' • в садок ('+rec.value+' 🪙) • +'+rec.xpAward+' опыта';
+ $('trophyBannerRecord').textContent=isRecord?'🥇 Новый личный рекорд этого вида!':'';
+ b.classList.remove('show');void b.offsetWidth;b.classList.add('show');clearTimeout(showTrophyCatch.t);showTrophyCatch.t=setTimeout(()=>b.classList.remove('show'),3400);
+}
+function addCatchRecord(f){
+ const kg=fishWeightKg(f),q=catchQuality(f,kg),range=fishWeightRange(f),sizeFactor=.72+(kg/Math.max(.1,range[1]))*.9;
+ const value=Math.max(1,Math.round((Number(f.reward)||1)*sizeFactor*q.mult));
+ const xpAward=Math.max(1,Math.round((Number(f.xp)||1)*(0.72+(kg/Math.max(.1,range[1]))*.55)*q.xp));
+ const old=state.hallOfFame&&state.hallOfFame[f.id];const isRecord=!old||kg>Number(old.kg||0);
+ const rec={id:f.id,name:f.name,icon:f.icon,rarity:f.rarity,quality:q.name,qualityId:q.id,qualityIcon:q.icon,kg,value,xpAward,location:state.location,lakeSpot:state.lakeSpot||'shore',at:Date.now()};
+ state.catchLog=Array.isArray(state.catchLog)?state.catchLog:[];state.catchLog.unshift(rec);state.catchLog=state.catchLog.slice(0,80);state.keepnet=Array.isArray(state.keepnet)?state.keepnet:[];state.keepnet.unshift({...rec,keepnetId:Date.now()+'_'+Math.random().toString(36).slice(2,7)});
+ try{updateHall(rec);recordTournament(rec)}catch(_e){}
+ try{showTrophyCatch(rec,isRecord)}catch(_e){}
+ return rec;
+}
+function maybeRareEvent(){
+ if(Math.random()>.105)return null;
+ let pool=rareEventDefs.filter(e=>e.id!=='crown'||state.level>=8);let weights=pool.map(e=>({boot:34,bottle:27,chest:19,pearl:11,map:7,crown:2}[e.id]||10));let r=Math.random()*weights.reduce((a,b)=>a+b,0),ev=pool[0];for(let i=0;i<pool.length;i++){r-=weights[i];if(r<=0){ev=pool[i];break}}
+ const bonus=Math.floor(ev.min+Math.random()*(ev.max-ev.min+1));state.coins+=bonus;state.totalEarned=(Number(state.totalEarned)||0)+bonus;state.rareEvents=Array.isArray(state.rareEvents)?state.rareEvents:[];state.rareEvents.unshift({id:ev.id,icon:ev.icon,name:ev.name,text:ev.text,bonus,at:Date.now()});state.rareEvents=state.rareEvents.slice(0,60);state.eventCollection=state.eventCollection||{};state.eventCollection[ev.id]=(state.eventCollection[ev.id]||0)+1;setTimeout(()=>toast(ev.icon+' '+ev.name+'! +'+bonus+' монет'),450);return ev;
+}
+function renderEvents(){const log=Array.isArray(state.rareEvents)?state.rareEvents:[],best=log.reduce((a,b)=>!a||b.bonus>a.bonus?b:a,null);if($('eventTotal'))$('eventTotal').textContent=log.length;if($('treasureTotal'))$('treasureTotal').textContent=log.filter(x=>['chest','pearl','map','crown'].includes(x.id)).length;if($('eventBest'))$('eventBest').textContent=best?best.bonus+' 🪙':'—';if($('eventKinds'))$('eventKinds').textContent=Object.keys(state.eventCollection||{}).length+' / '+rareEventDefs.length;if($('eventLog'))$('eventLog').innerHTML=log.length?log.map(e=>`<div class="catch-row"><div class="catch-icon">${e.icon}</div><div><b>${e.name}</b><small>${e.text} • ${new Date(e.at).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</small></div><div class="catch-price">+${e.bonus} 🪙</div></div>`).join(''):'<div class="catch-empty">Редкие находки могут появиться после успешного улова.</div>'}
+
+function keepnetTotals(){
+ const list=Array.isArray(state.keepnet)?state.keepnet:[];
+ return {count:list.length,weight:Math.round(list.reduce((a,r)=>a+(Number(r.kg)||0),0)*100)/100,value:list.reduce((a,r)=>a+(Number(r.value)||0),0)};
+}
+function sellAllCatch(){
+ const t=keepnetTotals();
+ if(!t.count){toast('Садок пуст — сначала поймай рыбу');return}
+ state.coins=(Number(state.coins)||0)+t.value;
+ state.totalEarned=(Number(state.totalEarned)||0)+t.value;
+ state.soldFish=(Number(state.soldFish)||0)+t.count;
+ state.keepnet=[];
+ toast('💰 Продано рыб: '+t.count+' • получено '+t.value+' монет');
+ try{tone(520,.12,'triangle',.05);tone(760,.2,'triangle',.06,.12)}catch(_e){}
+ update();save();
+}
+function renderKeepnet(){
+ const list=Array.isArray(state.keepnet)?state.keepnet:[],t=keepnetTotals();
+ if($('keepnetCount'))$('keepnetCount').textContent=t.count;
+ if($('keepnetWeight'))$('keepnetWeight').textContent=t.weight.toFixed(2)+' кг';
+ if($('keepnetValue'))$('keepnetValue').textContent=t.value+' 🪙';
+ const btn=$('sellAllCatch');if(btn){btn.disabled=!t.count;btn.textContent=t.count?'💰 Продать весь улов за '+t.value+' 🪙':'💰 Садок пуст';btn.onclick=sellAllCatch}
+ if($('keepnetList'))$('keepnetList').innerHTML=list.length?list.map(r=>`<div class="catch-row keepnet-row ${r.qualityId==='legendary'?'legendary':''}"><div class="catch-icon">${r.icon||'🐟'}</div><div><b>${r.name}</b><small>${r.kg} кг • ${r.qualityIcon||''} ${r.quality||r.rarity||'Рыба'} • цена при продаже ${r.value} 🪙</small></div><div class="catch-price">${r.value} 🪙</div></div>`).join(''):'<div class="catch-empty">Садок пуст. Пойманная рыба появится здесь и будет ждать продажи.</div>';
+}
+function renderCareer(){
+ renderKeepnet();
+ const log=Array.isArray(state.catchLog)?state.catchLog:[], heavy=log.reduce((a,b)=>!a||b.kg>a.kg?b:a,null), valuable=log.reduce((a,b)=>!a||b.value>a.value?b:a,null);
+ if($('careerTotal'))$('careerTotal').textContent=state.caught||0;
+ if($('careerEarned'))$('careerEarned').textContent=(state.totalEarned||0)+' 🪙';
+ if($('careerHeaviest'))$('careerHeaviest').textContent=heavy?heavy.kg+' кг':'—';
+ if($('careerValuable'))$('careerValuable').textContent=valuable?valuable.value+' 🪙':'—';
+ if($('catchLog'))$('catchLog').innerHTML=log.length?log.map(r=>`<div class="catch-row"><div class="catch-icon">${r.icon||'🐟'}</div><div><b>${r.name}</b><small>${r.kg} кг • ${r.qualityIcon||''} ${r.quality||r.rarity||'Рыба'} • +${r.xpAward||0} опыта • ${new Date(r.at).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</small></div><div class="catch-price">${r.value} 🪙</div></div>`).join(''):'<div class="catch-empty">Первый улов появится здесь после успешной рыбалки.</div>';
+}
+function renderCollection(){
+ const locName=id=>(worldLocations.find(x=>x.id===id)||{}).name||id;
+ $('collectionGrid').innerHTML=fishData.map(f=>{const n=(state.collection||{})[f.id]||0,records=(state.catchLog||[]).filter(x=>x.id===f.id),best=records.reduce((a,b)=>!a||b.kg>a.kg?b:a,null);return `<div class="fish-card ${n?'':'locked'}"><div class="big">${n?f.icon:'❔'}</div><b>${n?f.name:'Неизвестная рыба'}</b><div><span class="rarity ${f.cls}">${n?f.rarity:'???'}</span></div>${n?`<div class="count">Поймано: <b>${n}</b><br>Рекорд: <b>${best?best.kg+' кг':'—'}</b><br>Цена: от <b>${f.reward} 🪙</b><br>Водоёмы: ${f.locations.map(locName).join(', ')}<br>Характер: ${(fishPersonalities[f.personality]||{}).name||'Неизвестный'}</div>`:`<div class="count">Ещё не открыта<br>Продолжай исследовать разные водоёмы</div>`}</div>`}).join('')
+}
+function gearCatalog(type){return {rod:rods,reel:reels,lineGear:lines,hookGear:hooks,bait:baits}[type]||rods}
+function buy(type,i){
+ const arr=gearCatalog(type),key=type;if(i<=state[key])return;const item=arr[i];
+ if(i!==state[key]+1){toast('Сначала купи предыдущее улучшение');return}
+ if(state.coins<item.cost){toast('Не хватает монет');return}
+ state.coins-=item.cost;state[key]=i;toast('✅ Куплено и установлено: '+item.name);update()
+}
+function gearLevel(k){return Math.max(0,Math.min(5,Number(state.gearLevels&&state.gearLevels[k])||0))}
+function gearUpgradeCost(k){const idx=Number(state[k])||0,lvl=gearLevel(k);return Math.round(45+idx*85+lvl*70)}
+function upgradeGear(k){const lvl=gearLevel(k);if(lvl>=5){toast('Эта снасть уже улучшена до максимума');return}const cost=gearUpgradeCost(k);if(state.coins<cost){toast('Не хватает монет: нужно '+cost);return}state.coins-=cost;state.gearLevels[k]=lvl+1;toast('🔧 Улучшение выполнено: уровень '+(lvl+1));update()}
+function renderUpgradeLab(){const defs=[['rod','🎣','Удочка','Контроль натяжения'],['reel','⚙️','Катушка','Скорость подтягивания'],['lineGear','🧵','Леска','Защита от обрыва'],['hookGear','🪝','Крючок','Шанс удержать трофей'],['bait','🪱','Приманка','Шанс редкого улова']];return `<div class="upgrade-lab"><div class="upgrade-title">🔧 Мастерская улучшений</div><div class="locked-note">Улучшай установленную снасть до 5 уровня. При покупке новой модели её уровень сохраняется отдельно как общий опыт категории.</div>${defs.map(([k,ic,n,e])=>{const l=gearLevel(k),c=gearUpgradeCost(k);return `<div class="upgrade-row"><div><b>${ic} ${n}</b><div class="locked-note">${e}</div></div><div><b>Уровень ${l}/5</b><div class="upgrade-bar"><span style="width:${l*20}%"></span></div></div><div class="locked-note">${l>=5?'Максимум':'Следующий: '+c+' 🪙'}</div><button class="secondary" data-upgrade="${k}" ${l>=5?'disabled':''}>${l>=5?'Готово':'Улучшить'}</button></div>`}).join('')}</div>`}
+function renderShop(){
+ const section=(title,arr,key,icon,effect)=>`<div class="shop-section">${icon} ${title}</div>`+arr.map((x,i)=>`<div class="shop-item"><div style="font-size:32px">${icon}</div><b>${x.name}</b><div class="locked-note">${x.desc||effect(x)}</div>${i===state[key]?'<div class="equipped">✓ Установлено</div>':i<state[key]?'<div class="owned">✓ Куплено</div>':`<button class="secondary" data-buy="${key}" data-i="${i}">Купить за ${x.cost} 🪙</button>`}</div>`).join('');
+ $('shopGrid').innerHTML=renderUpgradeLab()+
+  section('Удочки',rods,'rod','🎣',x=>'Бонус редкости: +'+x.bonus)+
+  section('Катушки',reels,'reel','⚙️',x=>'Скорость подтягивания: +'+x.reel)+
+  section('Леска',lines,'lineGear','🧵',x=>'Запас прочности: +'+x.safe)+
+  section('Крючки',hooks,'hookGear','🪝',x=>'Шанс трофея: +'+x.rare)+
+  section('Приманки',baits,'bait','🪱',x=>'Бонус редкости: +'+x.bonus);
+ document.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>buy(b.dataset.buy,+b.dataset.i));document.querySelectorAll('[data-upgrade]').forEach(b=>b.onclick=()=>upgradeGear(b.dataset.upgrade))
+}
+function checkQuests(){questDefs.forEach(q=>{if(!state.quests[q.id]&&q.test(state)){state.quests[q.id]='ready';toast('🏆 Задание выполнено: '+q.title)}})}
+function claim(id){const q=questDefs.find(x=>x.id===id);if(state.quests[id]!=='ready')return;state.quests[id]='done';state.coins+=q.reward;toast('Награда получена: '+q.reward+' монет');update()}
+function renderQuests(){checkQuests();$('questGrid').innerHTML=questDefs.map(q=>{const st=state.quests[q.id];return `<div class="quest-item ${st==='done'?'done':''}"><div class="quest-title">${st==='done'?'✅':'🎯'} ${q.title}</div><div>${q.text}</div><div class="quest-reward">Награда: ${q.reward} 🪙</div>${st==='ready'?`<button class="primary" data-claim="${q.id}" style="margin-top:8px;padding:8px 12px;font-size:13px">Забрать</button>`:st==='done'?'<div class="owned">Получено</div>':'<div class="locked-note">В процессе</div>'}</div>`}).join('');document.querySelectorAll('[data-claim]').forEach(b=>b.onclick=()=>claim(b.dataset.claim))}
+function setLocation(id){const l=locations.find(x=>x.id===id);if(state.level<l.unlock){toast('Нужен уровень '+l.unlock);return}state.location=id;toast(l.icon+' Ты прибыл: '+l.name);applyLocation();update()}
+function renderLocations(){$('locationGrid').innerHTML=locations.map(l=>`<div class="location-card ${state.location===l.id?'active':''}"><div style="font-size:38px">${l.icon}</div><b>${l.name}</b><div>${l.desc}</div><div class="locked-note">Открывается на уровне ${l.unlock}</div><button class="${state.level>=l.unlock?'primary':'secondary'}" data-loc="${l.id}">${state.location===l.id?'Ты здесь':state.level>=l.unlock?'Отправиться':'Закрыто'}</button></div>`).join('');document.querySelectorAll('[data-loc]').forEach(b=>b.onclick=()=>setLocation(b.dataset.loc))}
+const expeditionDefs=[
+ {id:'e1',icon:'🏝️',title:'Островной разведчик',text:'Посети 3 разных водоёма',goal:3,reward:180,unlock:2,test:s=>(s.visitedLocations||[]).length,unit:'мест'},
+ {id:'e2',icon:'🌙',title:'Тайна Лунной лагуны',text:'Доберись до Лунной лагуны и поймай там рыбу',goal:1,reward:420,unlock:7,test:s=>(s.catchLog||[]).some(x=>x.location==='moonlagoon')?1:0,unit:'улов'},
+ {id:'e3',icon:'❄️',title:'Северный маршрут',text:'Посети Ледяной фьорд',goal:1,reward:550,unlock:10,test:s=>(s.visitedLocations||[]).includes('frostfjord')?1:0,unit:'маршрут'},
+ {id:'e4',icon:'🌀',title:'Свет в бездне',text:'Поймай Светящегося глубинника',goal:1,reward:900,unlock:14,test:s=>((s.collection||{}).abyssal||0)>0?1:0,unit:'легенда'}
+];
+function expeditionProgress(e){return Math.min(e.goal,Number(e.test(state))||0)}
+function claimExpedition(id){const e=expeditionDefs.find(x=>x.id===id);if(!e)return;const p=expeditionProgress(e);if(p<e.goal){toast('Экспедиция ещё не завершена');return}if(state.expeditions[id]==='claimed'){toast('Награда уже получена');return}state.expeditions[id]='claimed';state.coins+=e.reward;state.expeditionPoints+=1;toast('🧭 Экспедиция завершена! +'+e.reward+' монет');update()}
+function renderExpeditions(){const root=$('expeditionContent');if(!root)return;const completed=expeditionDefs.filter(e=>state.expeditions[e.id]==='claimed').length,visited=(state.visitedLocations||[]).length;root.innerHTML=`<div class="expedition-hero"><div><h3>Капитанский журнал</h3><p>Открывай секретные воды, выполняй маршрутные задания и привози редкие трофеи. Секретные точки отмечены фиолетовым сиянием на карте.</p><span class="secret-badge">Новые маршруты уже на карте</span></div><div class="bigship">${boatData().icon}</div></div><div class="expedition-summary"><div class="exp-stat">Посещено<b>${visited}/${worldLocations.length}</b></div><div class="exp-stat">Завершено<b>${completed}/${expeditionDefs.length}</b></div><div class="exp-stat">Очки экспедиций<b>${state.expeditionPoints||0}</b></div><div class="exp-stat">Текущий корабль<b style="font-size:14px">${boatData().name}</b></div></div><div class="expedition-grid">${expeditionDefs.map(e=>{const p=expeditionProgress(e),done=state.expeditions[e.id]==='claimed',locked=state.level<e.unlock,ready=p>=e.goal&&!done;return `<div class="exp-card ${done?'done':''} ${locked?'locked':''}"><div class="exp-icon">${e.icon}</div><h3>${e.title}</h3><p>${e.text}</p><small>Открывается на уровне ${e.unlock}</small><div class="exp-progress"><span style="width:${Math.round(p/e.goal*100)}%"></span></div><b>${p}/${e.goal} ${e.unit}</b><div class="exp-reward">Награда: ${e.reward} 🪙</div><button class="${ready?'primary':'secondary'}" data-expclaim="${e.id}" ${locked||done||!ready?'disabled':''}>${done?'Получено':locked?'Закрыто':ready?'Забрать награду':'В пути'}</button></div>`}).join('')}</div>`;root.querySelectorAll('[data-expclaim]').forEach(b=>b.onclick=()=>claimExpedition(b.dataset.expclaim))}
+
+
+const npcDefs=[
+ {id:'old',icon:'👴',name:'Старый Марек',place:'bay',lines:['Тихая вода любит терпеливых.','На рассвете крупная рыба подходит ближе к берегу.','Не продавай первый большой трофей — запомни его.']},
+ {id:'ranger',icon:'🧔',name:'Смотритель Оливер',place:'lake',lines:['В лесном озере слушай птиц — они выдают движение малька.','После дождя попробуй другую приманку.','Здесь иногда появляется очень старая щука.']},
+ {id:'captain',icon:'🧑‍✈️',name:'Капитан Роза',place:'reef',lines:['Хорошая лодка открывает не только путь, но и легенды.','У рифа не спеши с подсечкой.','Я видела золотую тень за дальними камнями.']},
+ {id:'hermit',icon:'🧙',name:'Отшельник Туман',place:'moonlagoon',lines:['Луна отражает то, что днём скрывает вода.','Легендарная рыба приходит только к настойчивым.','Собери все тайны — и лагуна ответит.']}
+];
+function talkNpc(id){const n=npcDefs.find(x=>x.id===id);if(!n)return;state.npcMet=state.npcMet||{};state.npcMet[id]=(state.npcMet[id]||0)+1;state.npcTalks=(state.npcTalks||0)+1;const line=n.lines[(state.npcMet[id]-1)%n.lines.length];state.coins+=10;toast(n.icon+' '+n.name+': '+line+'  +10 монет');renderNpcs();update();save()}
+function renderNpcs(){const root=$('npcContent');if(!root)return;const met=Object.keys(state.npcMet||{}).length;root.innerHTML=`<div class="ambient-banner"><h3>Живой мир Goldfish</h3><p>В разных водоёмах теперь встречаются рыбаки. Разговаривай с ними: они дают подсказки и небольшие награды.</p><b>Знакомства: ${met}/${npcDefs.length} • Разговоры: ${state.npcTalks||0}</b></div><div class="npc-grid">${npcDefs.map(n=>{const here=state.location===n.place,c=(state.npcMet||{})[n.id]||0;return `<div class="npc-card ${c?'met':''}"><div class="npc-face">${n.icon}</div><h3>${n.name}</h3><p>Встречается: ${locationName(n.place)}</p><div class="dialogue">${c?'Вы уже говорили '+c+' раз. У него ещё есть истории.':'Вы пока не знакомы.'}</div><button class="${here?'primary':'secondary'}" data-npc="${n.id}" ${here?'':'disabled'}>${here?'Поговорить':'Ищи в другом месте'}</button></div>`}).join('')}</div>`;root.querySelectorAll('[data-npc]').forEach(b=>b.onclick=()=>talkNpc(b.dataset.npc))}
+function locationName(id){const a=(typeof worldLocations!=='undefined'?worldLocations:[]).find(x=>x.id===id);return a?a.name:id}
+
+function renderAll(){renderCareer();renderCollection();renderShop();renderQuests();renderEvents();renderLocations();renderBoats();renderWorldMap();renderExpeditions();renderTournaments();renderHall();renderLodge();renderNpcs()}
+function applyLocation(){ensureBoatState();document.querySelector('.boat').textContent=boatData().icon;const sea=document.querySelector('.sea'),island=document.querySelector('.island'),bottom=document.querySelector('.bottom');if(state.location==='lake'){island.textContent='🌲';bottom.innerHTML='<span>🪨</span><span>🌿</span><span>🪵</span><span>⭐</span><span>🌿</span><span>🪨</span>';sea.style.filter='hue-rotate(18deg) saturate(.85)'}else if(state.location==='river'){island.textContent='🏕️';bottom.innerHTML='<span>🪨</span><span>🌾</span><span>🪵</span><span>🐚</span><span>🌾</span><span>🪨</span>';sea.style.filter='hue-rotate(28deg) saturate(.72)'}else if(state.location==='reef'){island.textContent='🏝️';bottom.innerHTML='<span>🪸</span><span>🐚</span><span>🪸</span><span>⭐</span><span>🦪</span><span>🪸</span>';sea.style.filter='hue-rotate(-12deg) saturate(1.25)'}else if(state.location==='wreck'){island.textContent='⚓';bottom.innerHTML='<span>🪸</span><span>⚓</span><span>🪵</span><span>💰</span><span>🦀</span><span>🪨</span>';sea.style.filter='hue-rotate(-28deg) brightness(.72)'}else if(state.location==='volcano'){island.textContent='🌋';bottom.innerHTML='<span>🪨</span><span>🔥</span><span>🪸</span><span>⭐</span><span>🪨</span>';sea.style.filter='hue-rotate(-55deg) saturate(1.35)'}else{island.textContent='🏝️';bottom.innerHTML='<span>🪨</span><span>🌿</span><span>🪸</span><span>⭐</span><span>🦪</span><span>🌿</span><span>🪨</span>';sea.style.filter='none'}}
+const weatherOrder=['day','sunset','night','fog','rain','storm'];
+const weatherNames={day:'☀️ День',sunset:'🌅 Закат',night:'🌙 Ночь',fog:'🌫️ Туман',rain:'🌧️ Дождь',storm:'⛈️ Гроза'};
+function applyWeather(){
+ const sky=document.querySelector('.sky'),sea=document.querySelector('.sea');
+ sky.classList.remove('sunset','night','rainy','foggy','stormy');sea.classList.remove('sunset','night','rainy','foggy','stormy');
+ $('rainLayer').classList.remove('show');$('fogLayer').classList.remove('show');
+ if(state.weather==='sunset'){sky.classList.add('sunset');sea.classList.add('sunset')}
+ if(state.weather==='night'){sky.classList.add('night');sea.classList.add('night')}
+ if(state.weather==='fog'){sky.classList.add('foggy');sea.classList.add('foggy');$('fogLayer').classList.add('show')}
+ if(state.weather==='rain'){sky.classList.add('rainy');sea.classList.add('rainy');$('rainLayer').classList.add('show')}
+ if(state.weather==='storm'){sky.classList.add('stormy');sea.classList.add('stormy');$('rainLayer').classList.add('show')}
+ $('weatherBadge').textContent=weatherNames[state.weather]||weatherNames.day;save();
+}
+function cycleWeather(manual=false){
+ if(manual){state.weather=weatherOrder[(weatherOrder.indexOf(state.weather)+1)%weatherOrder.length]}
+ else{const pool=['day','day','sunset','night','fog','rain','storm'];state.weather=pool[Math.floor(Math.random()*pool.length)]}
+ applyWeather();
+ if(state.weather==='storm')stormPulse();
+}
+function stormPulse(){if(state.weather!=='storm')return;setTimeout(()=>{if(state.weather!=='storm')return;const l=$('lightningLayer');l.classList.remove('flash');void l.offsetWidth;l.classList.add('flash');$('game').classList.add('storm-shake');setTimeout(()=>$('game').classList.remove('storm-shake'),700);tone(70,.55,'sawtooth',.035,.15);stormPulse()},3200+Math.random()*6200)}
+$('weatherBadge').onclick=()=>{cycleWeather(true);toast('Погода изменена: '+weatherNames[state.weather])};
+// v1.9 replaces random weather rotation with a smooth time-of-day cycle.
+
+function pick(){
+ const rod=rods[state.rod]||rods[0],bait=baits[state.bait]||baits[0],hook=hooks[state.hookGear]||hooks[0];
+ const bonus=rod.bonus+bait.bonus+hook.rare+gearLevel('rod')*.18+gearLevel('hookGear')*.22+gearLevel('bait')*.25;
+ let pool=fishData.filter(f=>Array.isArray(f.locations)&&f.locations.includes(state.location));
+ if(!pool.length)pool=fishData.filter(f=>f.locations.includes('bay'));
+ const spot=state.lakeSpot||'shore',profile=lakeSpotFishing[spot]||lakeSpotFishing.shore;
+ const trophyBoost={shore:1,reeds:1.18,pier:.92,deep:1.42,cove:1.58}[spot]||1;
+ if(trophyBoost>1&&Math.random()<Math.min(.28,(trophyBoost-1)*.34)){
+  const tp=pool.filter(f=>f.trophy).map(f=>({f,w:Math.max(.05,(f.weight||1)*(profile.mult[f.id]||1))}));
+  if(tp.length){let rr=Math.random()*tp.reduce((a,x)=>a+x.w,0);for(const x of tp){rr-=x.w;if(rr<=0)return x.f}}
+ }
+ if(spot==='deep'&&Math.random()<.13){const strong=pool.filter(f=>(f.power||0)>=1.2);if(strong.length)return strong[Math.floor(Math.random()*strong.length)]}
+ if(trophySignCast){const tp=pool.filter(f=>f.trophy).map(f=>({f,w:Math.max(1,f.weight)*(profile.mult[f.id]||1)}));trophySignCast=false;if(tp.length&&Math.random()<.72){let rr=Math.random()*tp.reduce((a,x)=>a+x.w,0);for(const x of tp){rr-=x.w;if(rr<=0)return x.f}}}
+ const weighted=pool.map(f=>({f,w:Math.max(.01,f.weight*(profile.mult[f.id]||1)*(f.cls?1+bonus*.18:1))}));
+ let r=Math.random()*Math.max(weighted.reduce((a,x)=>a+x.w,0),1);for(const x of weighted){r-=x.w;if(r<=0)return x.f}
+ return pool[0]||fishData[0]
+}
+function resetTackle(){
+ const hook=$('hook'),line=$('line'),bobber=$('bobber'),biteFish=$('biteFish'),arc=$('castArc');
+ if(hook){hook.classList.remove('down','bite');hook.style.top='0px';hook.style.opacity='0';hook.style.display='none';setTimeout(()=>{hook.style.display=''},50)}
+ if(line){line.classList.remove('down');line.style.height='0px';line.style.opacity='0';setTimeout(()=>{line.style.opacity=''},50)}
+ if(bobber){bobber.classList.remove('down','bite');bobber.style.top='4px';bobber.style.opacity='0'}
+ if(biteFish){biteFish.classList.remove('approach','hooked');biteFish.style.opacity='0'}
+ if(arc)arc.classList.remove('play');
+}
+function finishCatch(f){
+ f=f||fishData[0];
+ let catchRecord=null;
+ try{catchRecord=addCatchRecord(f)}catch(_e){catchRecord={kg:0,value:Number(f.reward)||0,xpAward:Number(f.xp)||0,quality:'Обычная',qualityIcon:'🐟'}}
+ try{state.caught=(Number(state.caught)||0)+1}catch(_e){}
+ try{state.collection=state.collection||{};state.collection[f.id]=(state.collection[f.id]||0)+1}catch(_e){}
+ try{maybeRareEvent()}catch(_e){}
+ try{gainXp(Number(catchRecord&&catchRecord.xpAward)||Number(f.xp)||0)}catch(_e){}
+ const btn=$('castBtn');
+ resetTackle();
+ try{splash()}catch(_e){}
+ if($('fishIcon')){$('fishIcon').textContent=f.icon||'🐟';$('fishIcon').className=''}
+ if($('message'))$('message').textContent='Ты поймал: '+(f.name||'Рыба')+'!';
+ if($('reward'))$('reward').textContent=(catchRecord?catchRecord.kg+' кг • в садок • цена '+catchRecord.value:(f.reward||0)+' 🪙')+' • +'+(catchRecord?catchRecord.xpAward:(f.xp||0))+' опыта';
+ if((Number(catchRecord&&catchRecord.value)||Number(f.reward)||0)>(Number(state.bestReward)||0)){state.bestReward=Number(catchRecord&&catchRecord.value)||Number(f.reward)||0;state.best=(f.name||'Рыба')+(catchRecord?' • '+catchRecord.kg+' кг':'')}
+ if(f.id==='gold'){
+  if($('fishIcon'))$('fishIcon').className='gold';
+  if($('message'))$('message').textContent='⭐ ЗОЛОТАЯ РЫБКА! ⭐';
+  if($('reward'))$('reward').textContent='Джекпот: '+(catchRecord?catchRecord.kg+' кг • +'+catchRecord.value+' монет':'легендарная награда')+'!';
+  try{coinsBurst()}catch(_e){}
+  try{tone(523,.22,'triangle',.08);tone(659,.22,'triangle',.08,.18);tone(784,.3,'triangle',.09,.36)}catch(_e){}
+ }else{try{tone(440,.13,'triangle',.06);tone(660,.18,'triangle',.07,.13)}catch(_e){}}
+ busy=false;
+ if(btn){btn.disabled=false;btn.textContent='🎣 Закинуть ещё раз'}
+ try{checkQuests()}catch(_e){}
+ try{update();const c=$('coins');if(c){c.classList.remove('balance-pop');void c.offsetWidth;c.classList.add('balance-pop')}}catch(_e){}
+ try{save()}catch(_e){}
+}
+function loseTrophy(reason){
+ $('fightOverlay').classList.remove('show');$('fightFish').classList.remove('legend-alert');resetTackle();
+ $('fishIcon').textContent='💨';$('message').textContent='Трофей сорвался!';$('reward').textContent=reason;tone(130,.45,'sawtooth',.05);
+ $('castBtn').disabled=false;$('castBtn').textContent='🎣 Попробовать ещё раз';busy=false;update();
+}
+function startFight(f){
+ // v2.9.1: шкала начинается сразу после поклёвки; снасть остаётся видимой до завершения борьбы.
+ const isTrophy=!!f.trophy;
+ const style=fishPersonalities[f.personality]||fishPersonalities.calm;
+ const shadow=$('trophyShadow');
+ if(isTrophy&&shadow){shadow.classList.remove('show');void shadow.offsetWidth;shadow.classList.add('show')}
+ $('fightFish').textContent=f.icon||'🐟';
+ $('fightName').textContent=f.name||'Рыба';
+ $('fightPersonality').textContent=style.name;
+ const isLegend=f.rarity==='Легендарная'||f.rarity==='Мифическая';$('fightBadge').textContent=isLegend?'🐉 ЛЕГЕНДАРНАЯ БИТВА':isTrophy?'🏆 ТРОФЕЙНАЯ РЫБА':'🎣 РЫБА НА КРЮЧКЕ';$('fightFish').classList.toggle('legend-alert',isLegend);
+ $('fightOverlay').classList.add('show');
+ $('tensionFill').style.height='45%';$('progressFill').style.height='0%';
+ let tension=45,progress=0,holding=false,last=performance.now(),ended=false,holdTimer=null;
+ let nextAttack=performance.now()+900+Math.random()*1500;
+ const rodHelp=state.rod*0.06+gearLevel('rod')*.018,baitHelp=state.bait*0.025+gearLevel('bait')*.008,reelHelp=(reels[state.reel]||reels[0]).reel+gearLevel('reel')*.24,lineHelp=(lines[state.lineGear]||lines[0]).safe+gearLevel('lineGear')*1.5,hookHelp=(hooks[state.hookGear]||hooks[0]).rare+gearLevel('hookGear')*.28;
+ const power=(isTrophy?(f.power||1.15):(f.cls==='rare'?.68:.48))*style.speed;
+ const reelStep=(isTrophy?3.0:(f.cls==='rare'?5.2:7.2))*style.reel;
+ const reel=()=>{
+  if(ended)return;
+  holding=true;
+  tension+=(isTrophy?7.2:5.5)*(style.name.includes('Сильная')?1.08:1);
+  progress+=reelStep+state.rod*.65+state.bait*.22+reelHelp+gearLevel('rod')*.16;
+  try{tone(270,.05,'square',.025)}catch(_e){}
+  clearTimeout(holdTimer);holdTimer=setTimeout(()=>holding=false,130)
+ };
+ $('reelBtn').onpointerdown=e=>{e.preventDefault();reel()};
+ $('reelBtn').onclick=e=>{e.preventDefault();reel()};
+ const tick=now=>{
+  if(ended)return;
+  const dt=Math.min(.05,(now-last)/1000);last=now;
+  const wave=Math.sin(now/(250/style.speed));
+  tension+=(wave+(Math.random()-.46)*style.chaos)*power*22*dt;
+  tension-=(holding?1.5:8+rodHelp*16)*dt*style.drain;
+  if(now>=nextAttack&&Math.random()<style.attack){
+   nextAttack=now+900+Math.random()*1500;
+   if(f.personality==='tricky')tension-=11+Math.random()*9;
+   else if(f.personality==='deep'){tension-=7+Math.random()*7;progress-=4+Math.random()*4}
+   else tension+=10+Math.random()*13;
+   $('fightFish').style.animationDuration='.2s';setTimeout(()=>$('fightFish').style.animationDuration='',240);
+   try{tone(f.personality==='tricky'?180:95,.13,'sawtooth',.035)}catch(_e){}
+  }
+  progress-=Math.max(0,(30-tension))*dt*(isTrophy?.08:.035)*style.drain;
+  tension=Math.max(0,Math.min(105,tension));progress=Math.max(0,Math.min(100,progress));
+  $('tensionFill').style.height=tension+'%';$('progressFill').style.height=progress+'%';
+  if(tension>=100+lineHelp*.35){ended=true;loseTrophy('Леска не выдержала сильного натяжения.');return}
+  if(tension<=1){ended=true;loseTrophy('Леска ослабла, и рыба сорвалась.');return}
+  if(progress>=100){
+   ended=true;
+   $('fightOverlay').classList.remove('show');
+   $('message').textContent='Рыба почти у лодки!';
+   $('reward').textContent='Последний рывок — подтягиваем улов.';
+   const landedFish=$('biteFish'),landedLine=$('line'),landedHook=$('hook'),landedBobber=$('bobber');
+   if(landedFish){landedFish.textContent=f.icon||'🐟';landedFish.style.opacity='1';landedFish.classList.remove('approach','hooked');void landedFish.offsetWidth;landedFish.classList.add('hooked')}
+   if(landedLine){landedLine.classList.remove('down');landedLine.style.height='0px'}
+   if(landedHook){landedHook.classList.remove('down','bite');landedHook.style.top='0px';landedHook.style.opacity='0'}
+   if(landedBobber){landedBobber.classList.remove('down','bite');landedBobber.style.top='4px';landedBobber.style.opacity='0'}
+   setTimeout(()=>finishCatch(f),620);
+   return
+  }
+  requestAnimationFrame(tick)
+ };
+ requestAnimationFrame(tick)
+}
+function coinsBurst(){const game=$('game');for(let i=0;i<22;i++){const c=document.createElement('div');c.className='coin';c.textContent='🪙';c.style.left='50%';c.style.top='58%';c.style.setProperty('--x',(Math.random()*500-250)+'px');c.style.setProperty('--y',(Math.random()*-350-30)+'px');game.appendChild(c);setTimeout(()=>c.remove(),1400)}}
+function castLine(){
+ if(busy)return;
+ const btn=$('castBtn'),line=$('line'),hook=$('hook'),biteFish=$('biteFish');
+ if(!btn||!line||!hook)return;
+ busy=true;
+ trophySignCast=!!trophySignActive;
+ if(trophySignCast){$('message').textContent='Заброс в зону крупной рыбы!';try{toast('Точный момент! Шанс трофея повышен.')}catch(_e){}}
+ btn.disabled=true;
+ btn.textContent='⏳ Ждём поклёвку...';
+ state.casts=(Number(state.casts)||0)+1;
+ $('casts').textContent=state.casts;
+ $('fishIcon').textContent='🌊';
+ $('fishIcon').className='';
+ $('message').textContent='Удочка закинута! Ждём поклёвку...';
+ $('reward').textContent='Поплавок уже в воде.';
+ line.classList.remove('down');hook.classList.remove('down','bite');
+ void line.offsetWidth;
+ line.classList.add('down');hook.classList.add('down');
+ try{splash()}catch(e){}
+ try{save()}catch(e){}
+ try{tone(260,.14);tone(180,.22,'sine',.04,.12)}catch(e){}
+ const wait=1200+Math.random()*1300;
+ setTimeout(()=>{
+   if(!busy)return;
+   hook.classList.add('bite');
+   $('message').textContent='КЛЮЁТ!';
+   $('reward').textContent='Подсекаем рыбу...';
+   try{tone(520,.1,'square');tone(700,.12,'square',.05,.12)}catch(e){}
+ },wait);
+ setTimeout(()=>{
+   if(!busy)return;
+   try{
+     const f=pick();
+     if(!f)throw new Error('No fish available');
+     if(f.trophy){
+       $('message').textContent='ОГРОМНАЯ РЫБА НА КРЮЧКЕ!';
+       $('reward').textContent='Приготовься бороться за трофей.';
+       setTimeout(()=>startFight(f),450);
+     }else finishCatch(f);
+   }catch(e){
+     console.error(e);
+     $('message').textContent='Рыба сорвалась';
+     $('reward').textContent='Попробуй ещё раз.';
+     hook.classList.remove('down','bite');line.classList.remove('down');
+     btn.disabled=false;btn.textContent='🎣 Закинуть ещё раз';busy=false;
+   }
+ },wait+700);
+}
+window.castLine=castLine;
+(function installGuaranteedCast(){
+ const btn=$('castBtn');
+ if(!btn)return;
+ btn.onclick=function(event){
+  if(event){event.preventDefault();event.stopPropagation();}
+  if(busy)return false;
+  busy=true;btn.disabled=true;btn.textContent='⏳ Ждём поклёвку...';
+  state.casts=(Number(state.casts)||0)+1;
+  $('casts').textContent=state.casts;
+  const line=$('line'),hook=$('hook'),bobber=$('bobber'),arc=$('castArc'),biteFish=$('biteFish');
+  let hookedFish=null;
+  $('fishIcon').textContent='🎣';$('fishIcon').className='';
+  $('message').textContent='Заброс! Леска летит к воде...';
+  $('reward').textContent='Смотри на поплавок.';
+  [line,hook,bobber].forEach(el=>{if(el)el.classList.remove('down','bite')});
+  if(biteFish){biteFish.classList.remove('approach','hooked');biteFish.style.opacity='0'}
+  if(arc){arc.classList.remove('play');void arc.offsetWidth;arc.classList.add('play')}
+  setTimeout(()=>{
+    if(!busy)return;
+    if(line){line.style.height='210px';line.classList.add('down')}
+    if(hook){hook.style.top='194px';hook.style.opacity='1';hook.classList.add('down')}
+    if(bobber){bobber.style.top='188px';bobber.style.opacity='1';bobber.classList.add('down')}
+    $('message').textContent='Удочка закинута! Поплавок в воде.';
+    $('reward').textContent='Ждём поклёвку...';
+    try{splash()}catch(_e){}
+  },450);
+  try{save()}catch(_e){}
+  setTimeout(()=>{
+    if(!busy)return;
+    hookedFish=pick()||fishData[0];
+    if(biteFish){biteFish.textContent=hookedFish.icon||'🐟';biteFish.style.opacity='1';biteFish.classList.remove('hooked');void biteFish.offsetWidth;biteFish.classList.add('approach')}
+  },700);
+  setTimeout(()=>{
+    if(!busy)return;
+    hookedFish=hookedFish||pick()||fishData[0];
+    if(hook)hook.classList.add('bite');
+    if(bobber)bobber.classList.add('bite');
+    if(biteFish){biteFish.classList.remove('approach');biteFish.style.opacity='1'}
+    $('message').textContent='КЛЮЁТ! Рыба на крючке!';
+    $('reward').textContent=hookedFish.trophy?'Удерживай натяжение и подтягивай трофей к лодке.':'Сразу начинай подтягивать леску к лодке.';
+    try{tone(520,.1,'square');tone(700,.12,'square',.05,.12)}catch(_e){}
+    // Шкала появляется сразу в момент поклёвки. Рыба попадёт в лодку только после 100% прогресса.
+    setTimeout(()=>{if(busy){try{startFight(hookedFish)}catch(_e){finishCatch(hookedFish)}}},90);
+  },1800);
+  return false;
+ };
+})();
+
+$('soundBtn').onclick=()=>{state.sound=!state.sound;update()};
+$('resetBtn').onclick=()=>{if(!confirm('Начать игру заново? Весь прогресс будет удалён.'))return;localStorage.removeItem('goldfish_v1_state');location.reload()};
+document.querySelectorAll('.menu-btn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.menu-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.panel').forEach(p=>p.classList.remove('open'));const panelId=b.dataset.panel;document.body.classList.toggle('panel-screen-open',panelId!=='none');if(panelId!=='none'){const panel=$(panelId);if(panel)panel.classList.add('open');if(panelId==='boatPanel')renderBoats();if(panelId==='locationPanel')renderWorldMap();if(panelId==='lakeSpotPanel'&&window.renderLakeSpots)window.renderLakeSpots();if(panelId==='expeditionPanel')renderExpeditions();if(panelId==='tournamentPanel')renderTournaments();if(panelId==='hallPanel')renderHall();if(panelId==='lodgePanel')renderLodge();window.scrollTo({top:0,behavior:'smooth'})}});
+function randomJump(){if(busy||Math.random()>.45)return;const j=$('jumpFish');j.textContent=Math.random()>.25?'🐟':'🐠';j.style.left=(8+Math.random()*55)+'%';j.classList.remove('play');void j.offsetWidth;j.classList.add('play');setTimeout(randomJump,7000+Math.random()*9000)}setTimeout(randomJump,4500);
+function rareGoldenPass(){if(busy||Math.random()>.22)return;const g=$('legendFish');g.classList.remove('show');void g.offsetWidth;g.classList.add('show');setTimeout(rareGoldenPass,14000+Math.random()*18000)}setTimeout(rareGoldenPass,9000);
+const notes=['Старая карта говорит: золотая рыбка любит солнечные лучи.','Редкая рыба чаще подходит к хорошей приманке.','На рифе награды выше, но добраться туда сможет опытный рыбак.','В бутылке нашлось 25 монет!'];
+function scheduleBottle(){setTimeout(()=>{if(!busy&&!bottleActive){bottleActive=true;const b=$('bottle');b.style.left='-80px';b.classList.remove('drift');void b.offsetWidth;b.classList.add('drift');setTimeout(()=>bottleActive=false,12000)}scheduleBottle()},18000+Math.random()*22000)}scheduleBottle();
+function driftingLeaf(){if(state.weather==='storm'||state.weather==='rain')return;const e=document.createElement('div');e.className='leaf';e.textContent=Math.random()>.5?'🍂':'🍃';e.style.left=Math.random()*95+'%';e.style.setProperty('--drift',(Math.random()*260-130)+'px');$('game').appendChild(e);setTimeout(()=>e.remove(),9200)}
+setInterval(()=>{if(Math.random()>.45)driftingLeaf()},6200);
+function jellyPass(){if(state.location!=='reef'||Math.random()>.55)return;const e=document.createElement('div');e.className='jelly';e.textContent='🪼';e.style.left=(8+Math.random()*84)+'%';e.style.setProperty('--sway',(Math.random()*100-50)+'px');document.querySelector('.sea').appendChild(e);setTimeout(()=>e.remove(),11500)}
+setInterval(jellyPass,9000);
+$('bottle').onclick=()=>{if(!bottleActive)return;bottleActive=false;$('bottle').classList.remove('drift');$('bottle').style.opacity='0';const note=notes[Math.floor(Math.random()*notes.length)];if(note.includes('25')){state.coins+=25;update()}const t=$('noteToast');t.textContent='📜 '+note;t.classList.remove('show');void t.offsetWidth;t.classList.add('show')};
+
+// v1.5 — autonomous underwater ecosystem
+(function initLivingOcean(){
+ const ocean=$('livingOcean');
+ if(!ocean)return;
+ const icons=['🐟','🐠','🐟','🐡','🐠'];
+ const swimmers=[];
+ const W=()=>ocean.clientWidth||900, H=()=>ocean.clientHeight||460;
+ function makeFish(i){
+  const el=document.createElement('div');
+  const depth=Math.random();
+  el.className='life-fish '+(depth>.72?'deep':depth<.25?'near':'');
+  el.innerHTML='<span class="sprite">'+icons[i%icons.length]+'</span>';
+  const f={el,x:Math.random()*W(),y:48+Math.random()*(H()-105),vx:(24+Math.random()*34)*(Math.random()<.5?-1:1),vy:(Math.random()-.5)*8,baseY:0,phase:Math.random()*Math.PI*2,size:20+Math.random()*20,depth,curious:false,scared:0,cruise:22+Math.random()*32,decision:1.8+Math.random()*5.5,rest:0};
+  f.baseY=f.y; el.style.setProperty('--size',f.size+'px');el.style.setProperty('--opacity',(.48+(1-depth)*.45).toFixed(2)); ocean.appendChild(el);swimmers.push(f);return f;
+ }
+ for(let i=0;i<13;i++)makeFish(i);
+ // v2.8.2: random plankton dots removed for a cleaner ocean
+ let last=performance.now(),baitWas=false;
+ function baitPoint(){const b=$('bobber');if(!b||!b.classList.contains('down')||getComputedStyle(b).opacity==='0')return null;return{x:W()*.5,y:190}}
+ function animate(now){
+  const dt=Math.min(.045,(now-last)/1000);last=now;const bait=baitPoint();
+  if(!!bait!==baitWas){baitWas=!!bait;if(!bait)swimmers.forEach(f=>{f.curious=false;f.el.classList.remove('curious')})}
+  swimmers.forEach((f,idx)=>{
+   f.decision-=dt;
+   if(f.decision<=0&&!bait&&f.scared<=0){
+    f.decision=2.5+Math.random()*6.5;
+    if(Math.random()<.28){f.rest=.7+Math.random()*1.5;f.el.classList.add('resting')}
+    else{const dir=Math.random()<.5?-1:1;f.cruise=18+Math.random()*40;f.vx=dir*f.cruise;f.baseY=52+Math.random()*Math.max(80,H()-130)}
+   }
+   if(f.rest>0){f.rest-=dt;f.vx*=Math.pow(.91,dt*60);if(f.rest<=0)f.el.classList.remove('resting')}
+   if(f.scared>0){f.scared-=dt;f.vx+=(f.vx>=0?1:-1)*62*dt;f.el.classList.add('scared')}else f.el.classList.remove('scared');
+   if(bait){const dx=bait.x-f.x,dy=bait.y-f.y,dist=Math.hypot(dx,dy);const interested=(idx%3!==0&&dist<330);
+    if(interested){f.curious=true;f.el.classList.add('curious');f.vx+=dx/Math.max(dist,1)*22*dt;f.vy+=dy/Math.max(dist,1)*18*dt}
+   }
+   if(!f.curious){f.vy+=Math.sin(now/1100+f.phase)*1.8*dt;f.vy+=(f.baseY-f.y)*.018*dt;if(f.rest<=0&&Math.abs(f.vx)<12)f.vx+=(f.vx>=0?1:-1)*8*dt}
+   f.vx*=Math.pow(.998,dt*60);f.vy*=Math.pow(.985,dt*60);
+   const max= f.scared>0?105:58;f.vx=Math.max(-max,Math.min(max,f.vx));f.vy=Math.max(-24,Math.min(24,f.vy));
+   f.x+=f.vx*dt;f.y+=f.vy*dt;
+   if(f.x>W()+70){f.x=-70;f.baseY=55+Math.random()*(H()-125);f.y=f.baseY}if(f.x<-75){f.x=W()+70;f.baseY=55+Math.random()*(H()-125);f.y=f.baseY}
+   f.y=Math.max(35,Math.min(H()-62,f.y));
+   f.el.style.setProperty('--face',f.vx>=0?'1':'-1');
+   f.el.style.transform=`translate3d(${f.x}px,${f.y}px,0)`;
+  });
+  requestAnimationFrame(animate)
+ }
+ requestAnimationFrame(animate);
+ function predatorPass(){
+  if(busy||Math.random()>.58){setTimeout(predatorPass,9000+Math.random()*9000);return}
+  const p=$('predatorShadow');if(p){p.classList.remove('hunt');void p.offsetWidth;p.classList.add('hunt')}
+  setTimeout(()=>swimmers.forEach(f=>{if(f.y>175){f.scared=2.8;f.vx=(Math.random()<.5?-1:1)*(70+Math.random()*30);f.vy=(Math.random()-.5)*35;f.curious=false;f.el.classList.remove('curious')}}),1300);
+  setTimeout(predatorPass,13000+Math.random()*14000)
+ }
+ setTimeout(predatorPass,7000);
+})();
+
+load();ensureBoatState();applyLocation();applyWeather();update();renderBoats();renderWorldMap();
+
+// v1.6 — contextual water effects
+(function installLivingWaterEffects(){
+ const game=$('game');
+ const sea=document.querySelector('.sea');
+ if(!game||!sea)return;
+ let layer=$('waterFxLayer');
+ if(!layer){layer=document.createElement('div');layer.id='waterFxLayer';layer.className='water-fx-layer';sea.appendChild(layer)}
+ const px=()=>sea.clientWidth*.5;
+ const py=()=>Math.min(sea.clientHeight-14,196);
+ function add(cls,x,y,text){const e=document.createElement('div');e.className=cls;e.style.left=x+'px';e.style.top=y+'px';if(text)e.textContent=text;layer.appendChild(e);setTimeout(()=>e.remove(),2200);return e}
+ function rings(x=px(),y=py(),count=3){for(let i=0;i<count;i++)setTimeout(()=>add('fx-ring'+(i?' soft':''),x+(Math.random()*8-4),y+(Math.random()*3-1.5)),i*150)}
+ function droplets(x=px(),y=py(),count=9,power=1){for(let i=0;i<count;i++){const e=add('fx-drop',x+(Math.random()*14-7),y);e.style.setProperty('--dx',(Math.random()*70-35)*power+'px');e.style.setProperty('--dy',(-22-Math.random()*45)*power+'px')}}
+ function foam(x=px(),y=py()){add('fx-foam',x,y,'💦');rings(x,y,3);droplets(x,y,11,1.1)}
+ function trail(x=px(),y=py(),dir=1){for(let i=0;i<3;i++)setTimeout(()=>{const e=add('fx-trail',x-dir*i*18,y+i*3);e.style.setProperty('--rot',(dir>0?-8:8)+'deg')},i*90)}
+ function pulse(cls,ms=600){game.classList.remove(cls);void game.offsetWidth;game.classList.add(cls);setTimeout(()=>game.classList.remove(cls),ms)}
+ window.goldfishWaterFx={rings,droplets,foam,trail,pulse};
+ const oldSplash=window.splash||splash;
+ window.splash=function(){try{oldSplash()}catch(_e){} foam(px(),py())};
+ // Wrap the global functions without changing their game logic.
+ const originalStartFight=startFight;
+ startFight=function(f){
+   foam(px(),py());pulse('bite-pulse',560);
+   let n=0;const fightTrail=setInterval(()=>{const ov=$('fightOverlay');if(!ov||!ov.classList.contains('show')){clearInterval(fightTrail);return}trail(px()+Math.sin(n*.9)*42,py()+8,(n++%2?1:-1));if(n%3===0)rings(px()+Math.sin(n)*30,py()+6,1)},520);
+   return originalStartFight(f)
+ };
+ const originalFinishCatch=finishCatch;
+ finishCatch=function(f){
+   foam(px(),py()-2);setTimeout(()=>foam(px()+22,py()-4),180);pulse('catch-pulse',700);
+   return originalFinishCatch(f)
+ };
+ const btn=$('castBtn');
+ if(btn)btn.addEventListener('click',()=>{setTimeout(()=>{rings(px(),py(),4);droplets(px(),py(),8,.75)},470)},true);
+ // Strong bite cue synchronized with the guaranteed cast sequence.
+ if(btn)btn.addEventListener('click',()=>{setTimeout(()=>{if(!busy)return;foam(px(),py());pulse('bite-pulse',560)},1800)},true);
+})();
+
+
+// v1.8 — ambient world life
+(function installLivingWorld(){
+ const game=$('game'), sea=document.querySelector('.sea');
+ if(!game||!sea)return;
+ // v2.8.2: permanent random bubbles removed. Contextual bite and splash effects remain.
+ function replay(id,cls){const e=$(id);if(!e)return;e.classList.remove(cls);void e.offsetWidth;e.classList.add(cls)}
+ function birdLoop(){if(!document.hidden&&Math.random()>.28)replay('ambientBird','fly');setTimeout(birdLoop,9000+Math.random()*12000)}
+ function insectLoop(){if(!document.hidden&&Math.random()>.38)replay('ambientInsect','fly');setTimeout(insectLoop,12000+Math.random()*15000)}
+ setTimeout(birdLoop,2600);setTimeout(insectLoop,5200);
+ function breeze(){game.classList.add('world-breeze');setTimeout(()=>game.classList.remove('world-breeze'),2200+Math.random()*1600);setTimeout(breeze,11000+Math.random()*15000)}
+ setTimeout(breeze,6500);
+ function scatterFry(){['frySchool1','frySchool2'].forEach(id=>replay(id,'scatter'))}
+ // Large events disturb the small fry without changing gameplay.
+ const btn=$('castBtn');if(btn)btn.addEventListener('click',()=>setTimeout(scatterFry,420),true);
+ const originalStartFightV18=startFight;
+ startFight=function(f){scatterFry();return originalStartFightV18(f)};
+})();
+
+
+
+// v2.0.1 — build a non-repeating, scattered sky-only rain field.
+(function installNaturalRain(){
+ const layer=$('rainLayer');
+ if(!layer)return;
+ layer.innerHTML='';
+ const count=72;
+ for(let i=0;i<count;i++){
+  const drop=document.createElement('i');
+  drop.className='rain-drop';
+  const drift=-18+Math.random()*36;
+  const tilt=(-8+Math.random()*16)+'deg';
+  drop.style.setProperty('--left',(Math.random()*100).toFixed(2)+'%');
+  drop.style.setProperty('--length',(2.2+Math.random()*3.4).toFixed(2)+'px');
+  drop.style.setProperty('--alpha',(0.28+Math.random()*0.48).toFixed(2));
+  drop.style.setProperty('--duration',(0.48+Math.random()*0.75).toFixed(2)+'s');
+  drop.style.setProperty('--delay',(-Math.random()*1.8).toFixed(2)+'s');
+  drop.style.setProperty('--drift',drift.toFixed(1)+'px');
+  drop.style.setProperty('--tilt',tilt);
+  layer.appendChild(drop);
+ }
+})();
+
+// v1.9 — smooth cinematic time of day
+(function installTimeOfDay(){
+ const sky=document.querySelector('.sky'),sea=document.querySelector('.sea'),game=$('game'),label=$('v19TimeLabel'),flies=$('v19Fireflies');
+ if(!sky||!sea||!game)return;
+ if(flies){for(let i=0;i<18;i++){const f=document.createElement('i');f.className='v19-firefly';f.style.left=(4+Math.random()*92)+'%';f.style.top=(45+Math.random()*45)+'%';f.style.setProperty('--d',(2.8+Math.random()*4.8)+'s');f.style.setProperty('--delay',(-Math.random()*6)+'s');f.style.setProperty('--x',(Math.random()*42-21)+'px');f.style.setProperty('--y',(Math.random()*34-17)+'px');flies.appendChild(f)}}
+ const phases=[
+  {id:'day',name:'☀️ День',duration:42000},
+  {id:'sunset',name:'🌅 Закат',duration:30000},
+  {id:'night',name:'🌙 Вечер',duration:42000},
+  {id:'dawn',name:'🌄 Рассвет',duration:26000}
+ ];
+ let index=0,timer=0,pausedUntil=0;
+ function setPhase(id,announce=false){
+  sky.classList.remove('v19-dawn','v19-sunset','v19-night','sunset','night','rainy','foggy','stormy');
+  sea.classList.remove('v19-dawn','v19-sunset','v19-night','sunset','night','rainy','foggy','stormy');
+  game.classList.toggle('game-v19-night',id==='night');
+  if(id==='dawn'){sky.classList.add('v19-dawn');sea.classList.add('v19-dawn')}
+  if(id==='sunset'){sky.classList.add('v19-sunset');sea.classList.add('v19-sunset')}
+  if(id==='night'){sky.classList.add('v19-night');sea.classList.add('v19-night')}
+  const ph=phases.find(p=>p.id===id)||phases[0]; if(label)label.textContent=ph.name;
+  state.weather=id==='dawn'?'day':id; if($('weatherBadge'))$('weatherBadge').textContent=ph.name;
+  if(announce)toast('Время суток: '+ph.name.replace(/^.. /,'')); save();
+ }
+ function schedule(){clearTimeout(timer);const ph=phases[index];timer=setTimeout(()=>{if(Date.now()<pausedUntil){schedule();return}index=(index+1)%phases.length;setPhase(phases[index].id,true);schedule()},ph.duration)}
+ setPhase('day');schedule();
+ // Clicking the small time label advances the cinematic cycle manually.
+ if(label)label.onclick=()=>{pausedUntil=Date.now()+90000;index=(index+1)%phases.length;setPhase(phases[index].id,true);schedule()};
+ // Keep the existing weather badge useful: it now advances time instead of choosing random weather.
+ const badge=$('weatherBadge');if(badge)badge.onclick=()=>{pausedUntil=Date.now()+90000;index=(index+1)%phases.length;setPhase(phases[index].id,true);schedule()};
+})();
+
+
+
+// v2.11.0 — steps 1 + 2: rare trophy presence signs and a timed trophy opportunity.
+(function installTrophySigns(){
+ const sign=$('trophySign'),game=$('game');
+ if(!sign||!game)return;
+ let closingTimer=null,splashTimer=null;
+ function hide(){
+  trophySignActive=false;
+  sign.classList.remove('active','splashing');
+  game.classList.remove('trophy-cast-ready');
+  clearTimeout(closingTimer);clearInterval(splashTimer);
+  trophySignTimer=setTimeout(show,45000+Math.random()*42000);
+ }
+ function show(){
+  if(document.hidden||busy){trophySignTimer=setTimeout(show,9000);return}
+  trophySignActive=true;
+  sign.style.left=(35+Math.random()*40)+'%';
+  sign.style.top=(175+Math.random()*70)+'px';
+  sign.classList.add('active');
+  game.classList.add('trophy-cast-ready');
+  try{toast('На воде появились большие круги… Рядом крупная рыба!')}catch(_e){}
+  function pulse(){sign.classList.remove('splashing');void sign.offsetWidth;sign.classList.add('splashing');try{tone(115,.18,'sine',.022)}catch(_e){}}
+  pulse();splashTimer=setInterval(pulse,2400+Math.random()*900);
+  closingTimer=setTimeout(hide,9000);
+ }
+ document.addEventListener('visibilitychange',()=>{if(document.hidden&&trophySignActive)hide()});
+ trophySignTimer=setTimeout(show,8500+Math.random()*4500);
+ window.showTrophySign=show;
+})();
+
+// v2.10.0 — rare living-world encounters; one calm event at a time.
+(function installLivingWorld(){
+ const game=document.getElementById('game');
+ if(!game)return;
+ let active=false;
+ const events=[
+  {cls:'living-bird',icon:'🕊️',life:8800},
+  {cls:'living-dragonfly',icon:'🪰',life:7500},
+  {cls:'living-frog',icon:'🐸',life:3400},
+  {cls:'living-butterfly',icon:'🦋',life:8300}
+ ];
+ function createEvent(){
+  if(active||document.hidden||Math.random()<.38){schedule();return;}
+  active=true;
+  const e=events[Math.floor(Math.random()*events.length)];
+  const node=document.createElement('div');
+  node.className='living-event '+e.cls;
+  node.textContent=e.icon;
+  node.setAttribute('aria-hidden','true');
+  game.appendChild(node);
+  setTimeout(()=>{node.remove();active=false;schedule()},e.life);
+ }
+ function schedule(){setTimeout(createEvent,14000+Math.random()*19000)}
+ setTimeout(createEvent,7000+Math.random()*7000);
+})();
+
+
+
+// v4.0.0 — final weather, time and fishing conditions
+(function installFinalWeather(){
+ const game=document.getElementById('game'); if(!game)return;
+ const climates={
+  clear:{icon:'☀️',name:'Ясно',effect:'Обычный клёв, больше мелкой рыбы',bite:1,rare:.92,size:.97,escape:1},
+  cloudy:{icon:'☁️',name:'Пасмурно',effect:'Крупная рыба активнее',bite:1.08,rare:1.08,size:1.08,escape:.96},
+  rain:{icon:'🌧️',name:'Дождь',effect:'Клёв и шанс редкой рыбы выше',bite:1.22,rare:1.22,size:1.05,escape:1.02},
+  storm:{icon:'⛈️',name:'Гроза',effect:'Максимум трофеев, но больше сходов',bite:1.12,rare:1.48,size:1.14,escape:1.22},
+  fog:{icon:'🌫️',name:'Туман',effect:'Редкая рыба подходит ближе',bite:.94,rare:1.28,size:1.02,escape:1.05}
+ };
+ const order=['clear','cloudy','rain','storm','fog'];
+ state.climate=climates[state.climate]?state.climate:'clear';
+ state.climateChangedAt=Number(state.climateChangedAt)||Date.now();
+ let stormTimer=null, autoTimer=null;
+ function timeName(){
+  const sky=document.querySelector('.sky');
+  if(sky&&sky.classList.contains('v19-night'))return '🌙 Ночь';
+  if(sky&&sky.classList.contains('v19-sunset'))return '🌅 Закат';
+  if(sky&&sky.classList.contains('v19-dawn'))return '🌄 Рассвет';
+  return '☀️ День';
+ }
+ function timeId(){const n=timeName();return n.includes('Ночь')?'night':n.includes('Закат')?'sunset':n.includes('Рассвет')?'dawn':'day'}
+ function applyClimate(announce=false){
+  Object.keys(climates).forEach(k=>game.classList.remove('climate-'+k));
+  game.classList.add('climate-'+state.climate);
+  const c=climates[state.climate],tn=timeName();
+  const b=document.getElementById('weatherBadge');if(b)b.textContent=tn+' • '+c.icon+' '+c.name;
+  const ft=document.getElementById('finalTime');if(ft)ft.textContent=tn;
+  const fc=document.getElementById('finalClimate');if(fc)fc.textContent=c.icon+' '+c.name;
+  const fe=document.getElementById('finalClimateEffect');if(fe)fe.textContent=c.effect;
+  const tip=document.getElementById('weatherTip');if(tip)tip.textContent=c.name+': '+c.effect+'.';
+  const adv=document.getElementById('finalAdvice');if(adv){const map={shore:'🏖️ Берег',reeds:'🌾 Камыши',pier:'🌉 Пирс',deep:'🌊 Глубина',cove:'🍃 Заводь'};adv.textContent=map[state.lakeSpot||'shore']||'🎣 Озеро'}
+  clearTimeout(stormTimer);if(state.climate==='storm')flashStorm();
+  if(announce)toast(c.icon+' Погода: '+c.name+' — '+c.effect);
+  try{save()}catch(_e){}
+ }
+ function flashStorm(){if(state.climate!=='storm')return;stormTimer=setTimeout(()=>{if(state.climate!=='storm')return;const l=document.getElementById('lightningLayer');if(l){l.classList.remove('flash');void l.offsetWidth;l.classList.add('flash')}game.classList.add('storm-shake');setTimeout(()=>game.classList.remove('storm-shake'),650);try{tone(68,.5,'sawtooth',.025)}catch(_e){}flashStorm()},2600+Math.random()*4300)}
+ function next(manual=false){let i=order.indexOf(state.climate);if(manual)i=(i+1)%order.length;else{i=Math.floor(Math.random()*order.length);if(order[i]===state.climate)i=(i+1)%order.length}state.climate=order[i];state.climateChangedAt=Date.now();applyClimate(true)}
+ function schedule(){clearTimeout(autoTimer);autoTimer=setTimeout(()=>{if(!document.hidden)next(false);schedule()},70000+Math.random()*50000)}
+ const badge=document.getElementById('weatherBadge');if(badge)badge.onclick=()=>next(true);
+ const oldWeight=window.fishWeightKg||fishWeightKg;
+ window.fishWeightKg=fishWeightKg=function(f){let kg=oldWeight(f),c=climates[state.climate]||climates.clear,t=timeId();kg*=c.size;if(t==='night'&&(f.id==='pike'||f.id==='catfish'||(f.name||'').toLowerCase().includes('сом')))kg*=1.12;if(t==='dawn')kg*=1.04;const r=fishWeightRange(f);return Math.round(Math.max(r[0],Math.min(r[1]*1.08,kg))*100)/100};
+ const oldPick=window.pick||pick;
+ window.pick=pick=function(){
+  const c=climates[state.climate]||climates.clear,t=timeId();
+  if(Math.random()<Math.min(.34,.06*c.rare)){
+   let pool=fishData.filter(f=>f.locations&&f.locations.includes(state.location));
+   if(t==='night'){const noct=pool.filter(f=>f.id==='pike'||f.id==='catfish'||(f.name||'').toLowerCase().includes('сом')||f.trophy);if(noct.length&&Math.random()<.55)return noct[Math.floor(Math.random()*noct.length)]}
+   if(c.rare>1.2){const rare=pool.filter(f=>f.cls==='rare'||f.trophy);if(rare.length&&Math.random()<Math.min(.7,(c.rare-1)*1.35))return rare[Math.floor(Math.random()*rare.length)]}
+  }
+  return oldPick();
+ };
+ const observer=new MutationObserver(()=>applyClimate(false));const sky=document.querySelector('.sky');if(sky)observer.observe(sky,{attributes:true,attributeFilter:['class']});
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)applyClimate(false)});
+ applyClimate(false);schedule();
+ window.finalClimate=()=>climates[state.climate]||climates.clear;
+})();
+
+// v3.0.6 selector core is installed near state initialization.
+
+</script>
+
+<script>
+(function(){
+ const screen=document.getElementById('startScreen');
+ const hide=()=>{screen.classList.add('hidden');document.body.style.overflow='';};
+ document.body.style.overflow='hidden';
+if(sessionStorage.getItem('goldfish_new_game')==='1'){
+    sessionStorage.removeItem('goldfish_new_game');
+    hide();
+}
+ document.getElementById('startContinue').addEventListener('click',hide);
+ document.getElementById('startNewGame').addEventListener('click',()=>{
+   if(!confirm('Начать новую игру? Существующий прогресс будет удалён.')) return;
+   localStorage.removeItem('goldfish_v1_state');
+   sessionStorage.setItem('goldfish_new_game','1');
+location.reload();
+ });
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!screen.classList.contains('hidden'))hide();});
+})();
+</script>
+</body>
+</html>
