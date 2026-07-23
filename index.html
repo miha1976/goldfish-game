@@ -594,16 +594,12 @@ h1{font-size:clamp(24px,3.6vw,36px);line-height:1;margin-bottom:1px}
 .world-status{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 0 12px}.world-chip{background:rgba(255,255,255,.88);border:1px solid rgba(0,90,130,.18);border-radius:14px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 6px 18px rgba(0,80,120,.08)}.world-chip b{font-size:15px}.world-chip small{display:block;opacity:.72;margin-top:2px}.weather-badge{cursor:pointer;user-select:none}.weather-badge::after{content:' • нажми';font-size:10px;opacity:.7}.game.climate-cloudy .sky{filter:saturate(.82) brightness(.92)}.game.climate-cloudy .cloud{opacity:1;transform:scale(1.2)}.game.climate-rain .sky,.game.climate-rain .sea{filter:saturate(.86) brightness(.84)}.game.climate-rain #rainLayer{display:block!important;opacity:.85}.game.climate-storm .sky,.game.climate-storm .sea{filter:saturate(.72) brightness(.62) contrast(1.08)}.game.climate-storm #rainLayer{display:block!important;opacity:1}.game.climate-storm .cloud{filter:grayscale(1) brightness(.55);font-size:66px}.game.climate-storm .surface{animation-duration:.75s}.game.climate-fog .sky,.game.climate-fog .sea{filter:saturate(.65) brightness(.98)}.game.climate-fog #fogLayer{display:block!important;opacity:.82}.game.climate-clear .surface-sparkles{opacity:1}.weather-tip{position:absolute;right:12px;bottom:12px;z-index:44;background:rgba(5,35,55,.72);color:#fff;border:1px solid rgba(255,255,255,.28);padding:7px 10px;border-radius:12px;font-size:12px;max-width:260px;backdrop-filter:blur(5px)}
 @media(max-width:720px){.world-status{grid-template-columns:1fr}.world-chip{min-height:54px}.weather-tip{font-size:11px;max-width:210px}}
 
-/* Goldfish v1.0 release start screen */
-#startScreen{position:fixed;inset:0;z-index:100000;background:#071b29;display:flex;align-items:center;justify-content:center;overflow:hidden}
-#startScreen.hidden{display:none}
-#startScreen .menu-art{position:relative;height:100%;aspect-ratio:2/3;max-width:100%;background:url("assets/goldfish-menu.png") center/contain no-repeat}
-#startScreen .start-hit{position:absolute;left:23%;width:54%;height:8.5%;border:0;border-radius:28px;background:transparent;cursor:pointer;color:transparent;font-size:0}
-#startScreen .start-hit:focus-visible{outline:5px solid #fff;outline-offset:4px;background:rgba(255,255,255,.12)}
-#startScreen .new-game{top:61.2%}
-#startScreen .continue-game{top:71.2%}
-#startScreen .release-note{position:absolute;left:50%;bottom:1.2%;transform:translateX(-50%);color:rgba(255,255,255,.72);font-size:11px;white-space:nowrap;text-shadow:0 2px 5px #000}
-@media (max-aspect-ratio:2/3){#startScreen .menu-art{width:100%;height:auto}}
+/* Goldfish — новое главное меню */
+...весь новый код...
+@media (max-width:600px){
+  ...
+}
+</style>
 </style>
 </head>
 <body>
